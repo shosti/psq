@@ -7,6 +7,7 @@ defmodule Psq.Mixfile do
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     consolidate_protocols: Mix.env != :test,
      deps: deps]
   end
 
@@ -27,6 +28,9 @@ defmodule Psq.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      {:excheck, "~> 0.3", only: :test},
+      {:triq, github: "krestenkrab/triq", only: :test},
+    ]
   end
 end
