@@ -30,6 +30,7 @@ defmodule Psq.Mixfile do
     [
       {:excheck, "~> 0.3", only: :test},
       {:triq, github: "krestenkrab/triq", only: :test},
+      {:benchfella, "~> 0.3.0"},
     ]
   end
 end
