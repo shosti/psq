@@ -10,5 +10,5 @@ matrix:
     - elixir: 1.2.2
       otp_release: 19.0
 script:
-  - mix dialyzer
+  - mix dialyzer --halt-exit-status
   - mix test
