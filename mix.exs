@@ -4,19 +4,20 @@ defmodule PSQ.Mixfile do
   def project do
     [app: :psq,
      version: "0.0.1",
-     elixir: ">= 1.2.0",
+     elixir: "> 1.2.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps,
      dialyzer: [
-       flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wunderspecs -Wno_match)]]
+       flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wunderspecs -Wno_match),
+       plt_file: "#{System.user_home!}/.plt/dialyxir_#{:erlang.system_info(:otp_release)}_#{System.version}.plt"]]
   end
 
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
   def application do
-    []
+    [applications: [:logger]]
   end
 
   # Dependencies can be Hex packages:
