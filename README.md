@@ -1,4 +1,4 @@
-# PSQ
+# PSQ [![Build Status](https://travis-ci.org/shosti/psq.svg?branch=master)](https://travis-ci.org/shosti/psq)
 
 A priority search queue implementation in Elixir.
 
