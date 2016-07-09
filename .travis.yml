@@ -5,6 +5,10 @@ elixir:
 otp_release:
   - 19.0
   - 18.2.1
+matrix:
+  exclude:
+    - elixir: 1.2.2
+      otp_release: 19.0
 script:
   - mix dialyzer
   - mix test
