@@ -9,7 +9,7 @@ defmodule PSQ.Mixfile do
      start_permanent: Mix.env == :prod,
      deps: deps,
      dialyzer: [
-       flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wunderspecs -Wno_match),
+       flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wno_match),
        plt_file: "#{System.user_home!}/.plt/dialyxir_#{:erlang.system_info(:otp_release)}_#{System.version}.plt"]]
   end
 
