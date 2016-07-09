@@ -1,45 +1,55 @@
 defmodule PSQ do
-  defstruct xs: [], key: nil, priority: nil
+  defstruct xs: [], key_fun: nil, prioritizer: nil
+
+  @type key :: any
+  @type value :: any
+  @type priority :: any
+  @type key_fun :: (value -> key)
+  @type prioritizer :: (value -> priority)
+  @opaque vals :: list(value)
+  @type t :: %__MODULE__{xs: vals, key_fun: key_fun, prioritizer: prioritizer}
+
+  @spec new(prioritizer, key_fun) :: t
+  def new(prioritizer, key_fun \\ &(&1)) do
+    %PSQ{key_fun: key_fun, prioritizer: prioritizer}
+  end
 
   def new do
-    new([], [])
+    new(&(&1), &(&1))
   end
 
-  def new(xs, opts \\ []) do
-    key = opts[:key] || &(&1)
-    priority = opts[:priority] || &(&1)
-    q = %PSQ{key: key, priority: priority}
-    Enum.into xs, q
-  end
-
+  @spec to_list(t) :: list(value)
   def to_list(q) do
     Enum.into q, []
   end
 
-  def insert(q = %PSQ{xs: xs, key: key}, entry) do
-    if lookup(q, key.(entry)) do
-      q
-    else
-      %PSQ{q | xs: [entry | xs]}
+  @spec insert(t, value) :: t
+  def insert(q = %PSQ{xs: xs, key_fun: key_fun}, entry) do
+    case lookup(q, key_fun.(entry)) do
+      nil -> %PSQ{q | xs: [entry | xs]}
+      _ -> q
     end
   end
 
+  @spec pop(t) :: {value, t}
   def pop(q = %PSQ{xs: []}) do
-    {:empty, q}
+    {nil, q}
   end
 
-  def pop(q = %PSQ{xs: xs, key: key, priority: priority}) do
-    min_entry = xs |> Enum.min_by(priority)
+  def pop(q = %PSQ{xs: xs, key_fun: key_fun, prioritizer: prioritizer}) do
+    min_entry = xs |> Enum.min_by(prioritizer)
 
-    {{:entry, min_entry}, delete(q, key.(min_entry))}
+    {min_entry, delete(q, key_fun.(min_entry))}
   end
 
-  def lookup(%PSQ{xs: xs, key: key}, k) do
-    xs |> Enum.find(&(key.(&1) == k))
+  @spec lookup(t, key) :: value
+  def lookup(%PSQ{xs: xs, key_fun: key_fun}, k) do
+    xs |> Enum.find(&(key_fun.(&1) == k))
   end
 
-  def delete(q = %PSQ{xs: xs, key: key}, k) do
-    %PSQ{q | xs: (xs |> Enum.reject(&(key.(&1) == k)))}
+  @spec delete(t, key) :: value
+  def delete(q = %PSQ{xs: xs, key_fun: key_fun}, k) do
+    %PSQ{q | xs: (xs |> Enum.reject(&(key_fun.(&1) == k)))}
   end
 end
 
@@ -51,7 +61,7 @@ defimpl Enumerable, for: PSQ do
   def reduce(q,   {:suspend, acc}, fun),         do: {:suspended, acc, &reduce(q, &1, fun)}
   def reduce(%PSQ{xs: []}, {:cont, acc}, _fun),  do: {:done, acc}
   def reduce(q, {:cont, acc}, fun) do
-    {{:entry, x}, rest} = PSQ.pop(q)
+    {x, rest} = PSQ.pop(q)
     reduce(rest, fun.(x, acc), fun)
   end
 end

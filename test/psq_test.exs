@@ -9,12 +9,12 @@ defmodule PSQTest do
     q = new_q
     q = q |> insert(3) |> insert(2) |> insert(5) |> insert(1) |> insert(4)
 
-    {{:entry, 5}, q} = q |> pop
-    {{:entry, 4}, q} = q |> pop
-    {{:entry, 3}, q} = q |> pop
-    {{:entry, 2}, q} = q |> pop
-    {{:entry, 1}, q} = q |> pop
-    {:empty, _} = q |> pop
+    assert {5, q} = q |> pop
+    assert {4, q} = q |> pop
+    assert {3, q} = q |> pop
+    assert {2, q} = q |> pop
+    assert {1, q} = q |> pop
+    assert {nil, _} = q |> pop
   end
 
   property :sort do
@@ -30,11 +30,11 @@ defmodule PSQTest do
     for_all xs in list(int) do
       q = new_q(xs)
       case pop(q) do
-        {{:entry, min}, _} ->
+        nil -> true
+        {min, _} ->
           Enum.all? xs, fn(x) ->
             x <= min
           end
-        {:empty, _} -> true
       end
     end
   end
@@ -58,6 +58,6 @@ defmodule PSQTest do
   end
 
   defp new_q(xs \\ []) do
-    new(xs, priority: &(-&1))
+    xs |> Enum.into(new(&(-&1)))
   end
 end

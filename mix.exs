@@ -1,4 +1,4 @@
-defmodule Psq.Mixfile do
+defmodule PSQ.Mixfile do
   use Mix.Project
 
   def project do
@@ -7,7 +7,9 @@ defmodule Psq.Mixfile do
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps,
+     dialyzer: [
+       flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wunderspecs -Wno_match)]]
   end
 
   # Configuration for the OTP application
@@ -30,7 +32,8 @@ defmodule Psq.Mixfile do
     [
       {:excheck, "~> 0.3", only: :test},
       {:triq, github: "krestenkrab/triq", only: :test},
-      {:benchfella, "~> 0.3.0"},
+      {:benchfella, "~> 0.3.0", only: :dev},
+      {:dialyxir, "~> 0.3.5", only: :dev},
     ]
   end
 end
