@@ -31,7 +31,7 @@ defmodule PSQ.Mixfile do
   defp deps do
     [
       {:excheck, "~> 0.3", only: :test},
-      {:triq, github: "krestenkrab/triq", only: :test},
+      {:triq, github: "shosti/triq", only: :test},
       {:benchfella, "~> 0.3.0", only: :dev},
       {:dialyxir, "~> 0.3.5", only: :dev},
     ]
