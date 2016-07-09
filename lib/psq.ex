@@ -47,7 +47,7 @@ defmodule PSQ do
     xs |> Enum.find(&(key_fun.(&1) == k))
   end
 
-  @spec delete(t, key) :: value
+  @spec delete(t, key) :: t
   def delete(q = %PSQ{xs: xs, key_fun: key_fun}, k) do
     %PSQ{q | xs: (xs |> Enum.reject(&(key_fun.(&1) == k)))}
   end
