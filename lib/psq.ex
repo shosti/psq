@@ -24,11 +24,9 @@ defmodule PSQ do
   end
 
   @spec insert(t, value) :: t
-  def insert(q = %PSQ{xs: xs, key_fun: key_fun}, entry) do
-    case lookup(q, key_fun.(entry)) do
-      nil -> %PSQ{q | xs: [entry | xs]}
-      _ -> q
-    end
+  def insert(q = %PSQ{key_fun: key_fun}, entry) do
+    q = delete(q, key_fun.(entry))
+    %PSQ{q | xs: [entry | q.xs]}
   end
 
   @spec pop(t) :: {value, t}
@@ -54,7 +52,7 @@ defmodule PSQ do
 end
 
 defimpl Enumerable, for: PSQ do
-  def count(%PSQ{xs: xs}), do: count(xs)
+  def count(%PSQ{xs: xs}), do: {:ok, Enum.count(xs)}
   def member?(%PSQ{xs: xs}, element), do: member?(xs, element)
 
   def reduce(_,   {:halt, acc}, _fun),           do: {:halted, acc}
