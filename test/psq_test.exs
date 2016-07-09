@@ -58,6 +58,6 @@ defmodule PSQTest do
   end
 
   defp new_q(xs \\ []) do
-    new(xs, priority_fn: &(-&1))
+    new(xs, priority: &(-&1))
   end
 end

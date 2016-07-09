@@ -1,16 +1,14 @@
 defmodule PSQ do
-  alias PSQ.Entry
-
-  defstruct xs: [], key_fn: nil, priority_fn: nil
+  defstruct xs: [], key: nil, priority: nil
 
   def new do
     new([], [])
   end
 
   def new(xs, opts \\ []) do
-    key_fn = opts[:key_fn] || &Entry.key/1
-    priority_fn = opts[:priority_fn] || &Entry.priority/1
-    q = %PSQ{key_fn: key_fn, priority_fn: priority_fn}
+    key = opts[:key] || &(&1)
+    priority = opts[:priority] || &(&1)
+    q = %PSQ{key: key, priority: priority}
     Enum.into xs, q
   end
 
@@ -18,8 +16,8 @@ defmodule PSQ do
     Enum.into q, []
   end
 
-  def insert(q = %PSQ{xs: xs, key_fn: key_fn}, entry) do
-    if lookup(q, key_fn.(entry)) do
+  def insert(q = %PSQ{xs: xs, key: key}, entry) do
+    if lookup(q, key.(entry)) do
       q
     else
       %PSQ{q | xs: [entry | xs]}
@@ -30,18 +28,18 @@ defmodule PSQ do
     {:empty, q}
   end
 
-  def pop(q = %PSQ{xs: xs, key_fn: key_fn, priority_fn: priority_fn}) do
-    min_entry = xs |> Enum.min_by(priority_fn)
+  def pop(q = %PSQ{xs: xs, key: key, priority: priority}) do
+    min_entry = xs |> Enum.min_by(priority)
 
-    {{:entry, min_entry}, delete(q, key_fn.(min_entry))}
+    {{:entry, min_entry}, delete(q, key.(min_entry))}
   end
 
-  def lookup(%PSQ{xs: xs, key_fn: key_fn}, k) do
-    xs |> Enum.find(&(key_fn.(&1) == k))
+  def lookup(%PSQ{xs: xs, key: key}, k) do
+    xs |> Enum.find(&(key.(&1) == k))
   end
 
-  def delete(q = %PSQ{xs: xs, key_fn: key_fn}, k) do
-    %PSQ{q | xs: (xs |> Enum.reject(&(key_fn.(&1) == k)))}
+  def delete(q = %PSQ{xs: xs, key: key}, k) do
+    %PSQ{q | xs: (xs |> Enum.reject(&(key.(&1) == k)))}
   end
 end
 
