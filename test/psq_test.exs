@@ -91,7 +91,7 @@ defmodule PSQTest do
     for_all xs in list(int) do
       q = new_q(xs)
       Enum.all? xs, fn(x) ->
-        lookup(q, x) != nil
+        Enum.member? q, x
       end
     end
   end
@@ -100,7 +100,7 @@ defmodule PSQTest do
     for_all xs in list(int) do
       q = new_q(xs)
       Enum.all? xs, fn(x) ->
-        lookup(delete(q, x), x) == nil
+        !Enum.member?(delete(q, x), x)
       end
     end
   end

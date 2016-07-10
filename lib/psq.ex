@@ -60,7 +60,7 @@ end
 
 defimpl Enumerable, for: PSQ do
   def count(%PSQ{xs: xs}), do: {:ok, Enum.count(xs)}
-  def member?(%PSQ{xs: xs}, element), do: member?(xs, element)
+  def member?(q, element), do: {:ok, !!PSQ.lookup(q, element)}
 
   def reduce(_,   {:halt, acc}, _fun),           do: {:halted, acc}
   def reduce(q,   {:suspend, acc}, fun),         do: {:suspended, acc, &reduce(q, &1, fun)}
