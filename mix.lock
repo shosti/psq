@@ -1,4 +1,8 @@
-%{"benchfella": {:hex, :benchfella, "0.3.2", "b9648e77fa8d8b8b9fe8f54293bee63f7de03909b3af6ab22a0e546716a396fb", [:mix], []},
+%{"benchee": {:hex, :benchee, "0.2.0", "a47ceb1aac6fb28d707788dcd45a7ae9a9993e7a414061bebec08184e15e3779", [:mix], []},
+  "benchee_csv": {:hex, :benchee_csv, "0.2.0", "b208e1791f8b4d89c154d1eaca6d19caf73855f1f72b6467485aee2a3f587890", [:mix], [{:csv, "~> 1.4.0", [hex: :csv, optional: false]}, {:benchee, "~> 0.2", [hex: :benchee, optional: false]}]},
+  "benchfella": {:git, "https://github.com/alco/benchfella.git", "6a6abf836d4afbd2ab3b9a44fbc41afbba6a43e2", []},
+  "csv": {:hex, :csv, "1.4.2", "cedb2f230171e6d10423aee8ce90512833b07e978747cc836b0f2c037fcf779d", [:mix], [{:parallel_stream, "~> 1.0.4", [hex: :parallel_stream, optional: false]}]},
   "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []},
   "excheck": {:hex, :excheck, "0.4.0", "d90b69d531e3715b017a0be708f69c201ef4609a1790ec0ab4ac300223aa05fc", [:mix], []},
+  "parallel_stream": {:hex, :parallel_stream, "1.0.5", "4c78d3e675f9eff885cbe252c89a8fc1d2fb803c0d03a914281e587834e09431", [:mix], []},
   "triq": {:git, "https://github.com/shosti/triq.git", "ff17557f34377ad2d936216c0ed74f5d68d89ff3", []}}

@@ -17,6 +17,13 @@ defmodule PSQTest do
     assert {nil, _} = q |> pop
   end
 
+  test "from_list makes a queue from the list" do
+    list = [2, 3, 1, 5, 4]
+    q = from_list(list)
+
+    assert to_list(q) == [1, 2, 3, 4, 5]
+  end
+
   test "prioritizer determines the order" do
     prioritizer = fn x ->
       if Integer.is_even x do

@@ -23,6 +23,13 @@ defmodule PSQ do
     Enum.into q, []
   end
 
+  @spec from_list(list(value), prioritizer, key_fun) :: t
+  def from_list(list, prioritizer \\ &(&1), key_fun \\ &(&1)) do
+    q = new(prioritizer, key_fun)
+    # TODO: replace be Enum.into (currently a hack for performance reasons)
+    %PSQ{q | xs: list}
+  end
+
   @spec insert(t, value) :: t
   def insert(q = %PSQ{key_fun: key_fun}, entry) do
     q = delete(q, key_fun.(entry))

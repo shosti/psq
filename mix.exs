@@ -33,8 +33,9 @@ defmodule PSQ.Mixfile do
     [
       {:excheck, "~> 0.3", only: :test},
       {:triq, github: "shosti/triq", only: :test},
-      {:benchfella, "~> 0.3.0", only: :dev},
-      {:dialyxir, "~> 0.3.5", only: :dev},
+      {:benchee, "~> 0.2", only: :dev},
+      {:benchee_csv, "~> 0.1", only: :dev},
+      {:dialyxir, "~> 0.3.5", only: [:dev, :test]},
     ]
   end
 end
