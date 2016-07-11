@@ -73,6 +73,13 @@ defmodule PSQ do
   def delete(q = %PSQ{xs: xs, key_fun: key_fun}, k) do
     %PSQ{q | xs: (xs |> Enum.reject(&(key_fun.(&1) == k)))}
   end
+
+  @spec at_most(t, priority) :: list(value)
+  def at_most(%PSQ{xs: xs, prioritizer: prioritizer}, priority) do
+    Enum.filter xs, fn(x) ->
+      prioritizer.(x) <= priority
+    end
+  end
 end
 
 defimpl Enumerable, for: PSQ do

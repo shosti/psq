@@ -135,6 +135,26 @@ defmodule PSQTest do
     end
   end
 
+  property :at_most do
+    for_all xs in list(int) do
+      q = new_q(xs)
+      if Enum.empty?(xs) do
+        at_most(q, :rand.uniform(1000)) == []
+      else
+        pivot = Enum.random(xs)
+        subset = at_most(q, pivot)
+
+        Enum.all? xs, fn(x) ->
+          if (-x) <= pivot do
+            Enum.member?(q, x) && Enum.member?(subset, x)
+          else
+            Enum.member?(q, x) && !Enum.member?(subset, x)
+          end
+        end
+      end
+    end
+  end
+
   defp new_q(xs) do
     xs |> Enum.into(new(&(-&1)))
   end

@@ -23,6 +23,11 @@ defmodule PSQBench do
     x = :rand.uniform(n)
     PSQ.delete(q, x * x)
   end
+
+  def at_most(q, _n) do
+    max = 50 * 50
+    PSQ.at_most(q, max)
+  end
 end
 
 date = DateTime.utc_now |> DateTime.to_unix
@@ -39,6 +44,7 @@ b = Enum.reduce [10_000, 100_000, 1_000_000, 10_000_000], Benchee.init, fn (n, b
   |> Benchee.benchmark("pop #{n}", fn -> PSQBench.pop(q) end)
   |> Benchee.benchmark("get #{n}", fn -> PSQBench.get(q, n) end)
   |> Benchee.benchmark("delete #{n}", fn -> PSQBench.delete(q, n) end)
+  |> Benchee.benchmark("at_most #{n}", fn -> PSQBench.at_most(q, n) end)
 end
 
 b
