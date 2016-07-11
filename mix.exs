@@ -10,7 +10,8 @@ defmodule PSQ.Mixfile do
      deps: deps,
      dialyzer: [
        flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wno_match),
-       plt_file: "#{System.user_home!}/.plt/dialyxir_#{:erlang.system_info(:otp_release)}_#{System.version}.plt"]]
+       plt_file: "#{System.user_home!}/.plt/dialyxir_#{:erlang.system_info(:otp_release)}_#{System.version}.plt"],
+     test_coverage: [tool: ExCoveralls]]
   end
 
   # Configuration for the OTP application
@@ -33,6 +34,7 @@ defmodule PSQ.Mixfile do
     [
       {:excheck, "~> 0.3", only: :test},
       {:triq, github: "shosti/triq", only: :test},
+      {:excoveralls, "~> 0.5", only: :test},
       {:benchee, "~> 0.2", only: :dev},
       {:benchee_csv, "~> 0.1", only: :dev},
       {:dialyxir, "~> 0.3.5", only: [:dev, :test]},
