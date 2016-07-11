@@ -41,10 +41,15 @@ defmodule PSQ do
     {nil, q}
   end
 
-  def pop(q = %PSQ{xs: xs, key_fun: key_fun, prioritizer: prioritizer}) do
-    min_entry = xs |> Enum.min_by(prioritizer)
+  def pop(q = %PSQ{key_fun: key_fun}) do
+    min_entry = min(q)
 
     {min_entry, delete(q, key_fun.(min_entry))}
+  end
+
+  @spec min(t) :: value | no_return
+  def min(%PSQ{xs: xs, prioritizer: prioritizer}) do
+    xs |> Enum.min_by(prioritizer)
   end
 
   @spec get(t, key) :: value

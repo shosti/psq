@@ -17,6 +17,16 @@ defmodule PSQTest do
     assert {nil, _} = q |> pop
   end
 
+  test "min returns the minimum element" do
+    q = from_list([2, 1, 5, 4, -1])
+
+    assert -1 = q |> min
+  end
+
+  test "min raises EmptyError if the queue is empty" do
+    assert_raise Enum.EmptyError, fn -> min(new) end
+  end
+
   test "from_list makes a queue from the list" do
     list = [2, 3, 1, 5, 4]
     q = from_list(list)
