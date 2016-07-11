@@ -30,8 +30,8 @@ defmodule PSQ do
     %PSQ{q | xs: list}
   end
 
-  @spec insert(t, value) :: t
-  def insert(q = %PSQ{key_fun: key_fun}, entry) do
+  @spec put(t, value) :: t
+  def put(q = %PSQ{key_fun: key_fun}, entry) do
     q = delete(q, key_fun.(entry))
     %PSQ{q | xs: [entry | q.xs]}
   end
@@ -47,9 +47,25 @@ defmodule PSQ do
     {min_entry, delete(q, key_fun.(min_entry))}
   end
 
-  @spec lookup(t, key) :: value
-  def lookup(%PSQ{xs: xs, key_fun: key_fun}, k) do
-    xs |> Enum.find(&(key_fun.(&1) == k))
+  @spec get(t, key) :: value
+  def get(%PSQ{xs: xs, key_fun: key_fun}, key) do
+    xs |> Enum.find(&(key_fun.(&1) == key))
+  end
+
+  @spec fetch(t, key) :: {:ok, value} | :error
+  def fetch(q, key) do
+    case get(q, key) do
+      nil -> :error
+      val -> {:ok, val}
+    end
+  end
+
+  @spec fetch!(t, key) :: value | no_return
+  def fetch!(q, key) do
+    case fetch(q, key) do
+      {:ok, val} -> val
+      :error -> raise KeyError, key: key, term: q
+    end
   end
 
   @spec delete(t, key) :: t
@@ -59,8 +75,13 @@ defmodule PSQ do
 end
 
 defimpl Enumerable, for: PSQ do
-  def count(%PSQ{xs: xs}), do: {:ok, Enum.count(xs)}
-  def member?(q, element), do: {:ok, !!PSQ.lookup(q, element)}
+  def count(_q), do: {:error, __MODULE__}
+  def member?(q, element) do
+    case PSQ.fetch(q, element) do
+      {:ok, _} -> {:ok, true}
+      :error -> {:ok, false}
+    end
+  end
 
   def reduce(_,   {:halt, acc}, _fun),           do: {:halted, acc}
   def reduce(q,   {:suspend, acc}, fun),         do: {:suspended, acc, &reduce(q, &1, fun)}
@@ -74,7 +95,7 @@ end
 defimpl Collectable, for: PSQ do
   def into(original) do
     {original, fn
-      q, {:cont, x} -> PSQ.insert(q, x)
+      q, {:cont, x} -> PSQ.put(q, x)
       q, :done -> q
       _, :halt -> :ok
     end}

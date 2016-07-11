@@ -7,7 +7,7 @@ defmodule PSQTest do
   doctest PSQ
 
   test "pop pops the minimum value by default" do
-    q = new |> insert(3) |> insert(2) |> insert(5) |> insert(1) |> insert(4)
+    q = new |> put(3) |> put(2) |> put(5) |> put(1) |> put(4)
 
     assert {1, q} = q |> pop
     assert {2, q} = q |> pop
@@ -46,7 +46,7 @@ defmodule PSQTest do
     assert {nil, _} = q |> pop
   end
 
-  test "key_fun determines uniqueness and lookup" do
+  test "key_fun determines uniqueness and get" do
     elems = [
       %{key: 3, priority: 1},
       %{key: 4, priority: 2},
@@ -59,10 +59,22 @@ defmodule PSQTest do
     q = elems |> Enum.into(new(prioritizer, key_fun))
 
     assert Enum.count(q) == 3
-    assert %{key: 4, priority: 2} = q |> lookup(4)
-    assert %{key: 0, priority: 3} = q |> lookup(0)
-    assert %{key: 3, priority: 4} = q |> lookup(3)
+    assert %{key: 4, priority: 2} = q |> get(4)
+    assert %{key: 0, priority: 3} = q |> get(0)
+    assert %{key: 3, priority: 4} = q |> get(3)
     assert {%{key: 4, priority: 2}, _} = q |> pop
+  end
+
+  test "fetch returns a tuple" do
+    q = from_list([1,2,3])
+    assert {:ok, 3} = fetch(q, 3)
+    assert :error = fetch(q, 4)
+  end
+
+  test "fetch! returns a value or raises an KeyError" do
+    q = from_list([1,2,3])
+    assert 3 = fetch!(q, 3)
+    assert_raise KeyError, fn -> fetch!(q, 4) end
   end
 
   property :sort do
@@ -71,6 +83,14 @@ defmodule PSQTest do
       l = to_list(q)
 
       l == Enum.reverse(Enum.sort(Enum.uniq(xs)))
+    end
+  end
+
+  property :count do
+    for_all xs in list(int) do
+      q = new_q(xs)
+
+      Enum.count(q) == Enum.count(Enum.uniq(xs))
     end
   end
 
