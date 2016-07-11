@@ -10,12 +10,8 @@ defmodule PSQ do
   @type t :: %__MODULE__{xs: vals, key_fun: key_fun, prioritizer: prioritizer}
 
   @spec new(prioritizer, key_fun) :: t
-  def new(prioritizer, key_fun \\ &(&1)) do
+  def new(prioritizer \\ &(&1), key_fun \\ &(&1)) do
     %PSQ{key_fun: key_fun, prioritizer: prioritizer}
-  end
-
-  def new do
-    new(&(&1), &(&1))
   end
 
   @spec to_list(t) :: list(value)
