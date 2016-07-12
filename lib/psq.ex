@@ -31,13 +31,13 @@ defmodule PSQ do
   @spec put(t, value) :: t
   def put(q = %PSQ{tree: tree, prioritizer: prioritizer, key_fun: key_fun}, val) do
     entry = %Entry{value: val, priority: prioritizer.(val), key: key_fun.(val)}
-    %PSQ{q | tree: insert(tree, entry)}
+    %PSQ{q | tree: do_put(tree, entry)}
   end
 
-  @spec insert(Winner.t, Entry.t) :: Winner.t
-  defp insert(:void, entry), do: %Winner{entry: entry, max_key: entry.key}
+  @spec do_put(Winner.t, Entry.t) :: Winner.t
+  defp do_put(:void, entry), do: %Winner{entry: entry, max_key: entry.key}
 
-  defp insert(winner = %Winner{loser: :start}, entry) do
+  defp do_put(winner = %Winner{loser: :start}, entry) do
     cond do
       winner.entry.key < entry.key ->
         play(winner, %Winner{entry: entry, max_key: entry.key})
@@ -48,12 +48,12 @@ defmodule PSQ do
     end
   end
 
-  defp insert(winner, entry) do
+  defp do_put(winner, entry) do
     {t1, t2} = unplay(winner)
     if entry.key <= t1.max_key do
-      play(insert(t1, entry), t2)
+      play(do_put(t1, entry), t2)
     else
-      play(t1, insert(t2, entry))
+      play(t1, do_put(t2, entry))
     end
   end
 
@@ -86,7 +86,7 @@ defmodule PSQ do
 
   @spec fetch(t, key) :: {:ok, value} | :error
   def fetch(%PSQ{tree: tree}, key) do
-    lookup(tree, key)
+    do_fetch(tree, key)
   end
 
   @spec fetch!(t, key) :: value | no_return
@@ -97,22 +97,22 @@ defmodule PSQ do
     end
   end
 
-  @spec lookup(Winner.t, key) :: {:ok, value} | :error
-  defp lookup(:void, _), do: :error
+  @spec do_fetch(Winner.t, key) :: {:ok, value} | :error
+  defp do_fetch(:void, _), do: :error
 
-  defp lookup(%Winner{entry: entry, loser: :start}, key) do
+  defp do_fetch(%Winner{entry: entry, loser: :start}, key) do
     case entry.key do
       ^key -> {:ok, entry.value}
       _    -> :error
     end
   end
 
-  defp lookup(winner, key) do
+  defp do_fetch(winner, key) do
     {t1, t2} = unplay(winner)
     if key <= t1.max_key do
-      lookup(t1, key)
+      do_fetch(t1, key)
     else
-      lookup(t2, key)
+      do_fetch(t2, key)
     end
   end
 
