@@ -28,29 +28,53 @@ defmodule PSQBench do
     max = 50 * 50
     PSQ.at_most(q, max)
   end
+
+  def run do
+    date = DateTime.utc_now |> DateTime.to_unix
+    fname = Path.join([System.cwd, "bench", "data", "#{date}.csv"])
+    file = File.open! fname, [:write]
+
+    b = Enum.reduce [100_000, 1_000_000], Benchee.init, fn (n, b) ->
+      IO.puts("Making PSQ of size #{n}...")
+      q = PSQBench.q(n)
+      IO.puts("Made PSQ!")
+
+      b
+      |> Benchee.benchmark("put #{n}", fn -> PSQBench.put(q, n) end)
+      |> Benchee.benchmark("pop #{n}", fn -> PSQBench.pop(q) end)
+      |> Benchee.benchmark("get #{n}", fn -> PSQBench.get(q, n) end)
+      |> Benchee.benchmark("delete #{n}", fn -> PSQBench.delete(q, n) end)
+      |> Benchee.benchmark("at_most #{n}", fn -> PSQBench.at_most(q, n) end)
+    end
+
+    b
+    |> Benchee.measure
+    |> Benchee.Statistics.statistics
+    |> Benchee.Formatters.CSV.format
+    |> Enum.each(fn(row) -> IO.write(file, row) end)
+
+    File.close file
+  end
+
+  def profile do
+    f = fn ->
+      n = 100_000
+      q = Enum.to_list(1..n) |> Enum.map(&(&1 * &1)) |> PSQ.from_list
+
+      put(q, n)
+      pop(q)
+      get(q, n)
+      delete(q, n)
+      at_most(q, n)
+    end
+    :fprof.apply(f, [])
+    :ok = :fprof.profile
+    :ok = :fprof.analyse(sort: :own)
+  end
 end
 
-date = DateTime.utc_now |> DateTime.to_unix
-fname = Path.join([System.cwd, "bench", "data", "#{date}.csv"])
-file = File.open! fname, [:write]
-
-b = Enum.reduce [100_000, 1_000_000, 10_000_000], Benchee.init, fn (n, b) ->
-  IO.puts("Making PSQ of size #{n}...")
-  q = PSQBench.q(n)
-  IO.puts("Made PSQ!")
-
-  b
-  |> Benchee.benchmark("put #{n}", fn -> PSQBench.put(q, n) end)
-  |> Benchee.benchmark("pop #{n}", fn -> PSQBench.pop(q) end)
-  |> Benchee.benchmark("get #{n}", fn -> PSQBench.get(q, n) end)
-  |> Benchee.benchmark("delete #{n}", fn -> PSQBench.delete(q, n) end)
-  |> Benchee.benchmark("at_most #{n}", fn -> PSQBench.at_most(q, n) end)
+if System.argv |> Enum.any?(&(&1 == "--profile")) do
+  PSQBench.profile
+else
+  PSQBench.run
 end
-
-b
-|> Benchee.measure
-|> Benchee.Statistics.statistics
-|> Benchee.Formatters.CSV.format
-|> Enum.each(fn(row) -> IO.write(file, row) end)
-
-File.close file
