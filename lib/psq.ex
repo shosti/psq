@@ -163,6 +163,8 @@ defmodule PSQ do
     do_at_most(t1, max_priority) ++ do_at_most(t2, max_priority)
   end
 
+  # "Tournament" functions
+
   @spec play(Winner.t, Winner.t) :: Winner.t
   defp play(:void, t), do: t
   defp play(t, :void), do: t
@@ -173,10 +175,10 @@ defmodule PSQ do
       ) when k1 < k2 do
     size = Loser.size(l1) + Loser.size(l2) + 1
     if p1 <= p2 do
-      loser = %Loser{entry: e2, left: l1, split_key: k1, right: l2, size: size}
+      loser = balance(%Loser{entry: e2, left: l1, split_key: k1, right: l2, size: size})
       %Winner{entry: e1, loser: loser, max_key: k2}
     else
-      loser = %Loser{entry: e1, left: l1, split_key: k1, right: l2, size: size}
+      loser = balance(%Loser{entry: e1, left: l1, split_key: k1, right: l2, size: size})
       %Winner{entry: e2, loser: loser, max_key: k2}
     end
   end
@@ -223,6 +225,96 @@ defmodule PSQ do
         %Winner{entry: entry, loser: right, max_key: max_key}
       )
     end
+  end
+
+  # Balancing functions
+
+  @balance_factor 4.0
+
+  @spec balance(Loser.t) :: Loser.t
+  defp balance(:start), do: :start
+
+  defp balance(loser = %Loser{left: left, right: right}) do
+    l = Loser.size(left)
+    r = Loser.size(right)
+    cond do
+      l + r < 2                 -> loser
+      r > (@balance_factor * l) -> balance_left(loser)
+      l > (@balance_factor * l) -> balance_right(loser)
+      true                      -> loser
+    end
+  end
+
+  @spec balance_left(Loser.t) :: Loser.t
+  defp balance_left(loser = %Loser{right: %Loser{left: rl, right: rr}}) do
+    if Loser.size(rl) < Loser.size(rr) do
+      single_left(loser)
+    else
+      double_left(loser)
+    end
+  end
+
+  @spec balance_right(Loser.t) :: Loser.t
+  defp balance_right(loser = %Loser{left: %Loser{left: ll, right: lr}}) do
+    if Loser.size(lr) < Loser.size(ll) do
+      single_right(loser)
+    else
+      double_right(loser)
+    end
+  end
+
+  @spec single_left(Loser.t) :: Loser.t
+  defp single_left(
+        %Loser{
+          entry: e1,
+          left: t1,
+          split_key: k1,
+          right: %Loser{
+            entry: e2, left: t2, split_key: k2, right: t3
+          }
+        }
+      ) do
+    new_left_size = Loser.size(t1) + Loser.size(t2) + 1
+    new_size = new_left_size + Loser.size(t3) + 1
+    if e2.key <= k2 && e1.priority <= e2.priority do
+      new_left = %Loser{entry: e2, left: t1, split_key: k1, right: t2, size: new_left_size}
+      %Loser{entry: e1, left: new_left, split_key: k2, right: t3, size: new_size}
+    else
+      new_left = %Loser{entry: e1, left: t1, split_key: k1, right: t2, size: new_left_size}
+      %Loser{entry: e2, left: new_left, split_key: k2, right: t3, size: new_size}
+    end
+  end
+
+  @spec single_right(Loser.t) :: Loser.t
+  defp single_right(
+        %Loser{
+          entry: e1,
+          left: %Loser{
+            entry: e2, left: t1, split_key: k1, right: t2
+          },
+          split_key: k2,
+          right: t3,
+        }
+      ) do
+    new_right_size = Loser.size(t2) + Loser.size(t3) + 1
+    new_size = Loser.size(t1) + new_right_size + 1
+    if e2.key > k1 && e1.priority <= e2.priority do
+      new_right = %Loser{entry: e2, left: t2, split_key: k2, right: t3, size: new_right_size}
+      %Loser{entry: e1, left: t1, split_key: k1, right: new_right, size: new_size}
+    else
+      new_right = %Loser{entry: e1, left: t2, split_key: k2, right: t3, size: new_right_size}
+      %Loser{entry: e2, left: t1, split_key: k1, right: new_right, size: new_size}
+    end
+  end
+
+  @spec double_left(Loser.t) :: Loser.t
+  defp double_left(loser = %Loser{right: right}) do
+    single_left(%Loser{loser | right: single_right(right)})
+  end
+
+  @spec double_right(Loser.t) :: Loser.t
+  defp double_right(loser = %Loser{left: left}) do
+    single_right(%Loser{loser | left: single_left(left)})
   end
 end
 
