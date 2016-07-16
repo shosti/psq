@@ -30,27 +30,29 @@ defmodule PSQ do
 
   @spec put(t, value) :: t
   def put(q = %PSQ{tree: tree, prioritizer: prioritizer, key_fun: key_fun}, val) do
-    entry = %Entry{value: val, priority: prioritizer.(val), key: key_fun.(val)}
+    entry = Entry.new(val, prioritizer, key_fun)
     %PSQ{q | tree: do_put(tree, entry)}
   end
 
   @spec do_put(Winner.t, Entry.t) :: Winner.t
-  defp do_put(:void, entry), do: %Winner{entry: entry, max_key: entry.key}
+  defp do_put(:void, entry), do: Winner.new(entry, :start, Entry.key(entry))
 
-  defp do_put(winner = %Winner{loser: :start}, entry) do
+  defp do_put(winner = {winner_entry, :start, max_key}, entry) do
+    winner_key = Entry.key(winner_entry)
+    entry_key = Entry.key(entry)
     cond do
-      winner.entry.key < entry.key ->
-        play(winner, %Winner{entry: entry, max_key: entry.key})
-      winner.entry.key == entry.key ->
-        %Winner{winner | entry: entry}
-      winner.entry.key > entry.key ->
-        play(%Winner{entry: entry, max_key: entry.key}, winner)
+      winner_key < entry_key ->
+        play(winner, Winner.new(entry, :start, entry_key))
+      winner_key == entry_key ->
+        Winner.new(entry, :start, max_key)
+      winner_key > entry_key ->
+        play(Winner.new(entry, :start, entry_key), winner)
     end
   end
 
   defp do_put(winner, entry) do
     {t1, t2} = unplay(winner)
-    if entry.key <= t1.max_key do
+    if Entry.key(entry) <= Winner.max_key(t1) do
       play(do_put(t1, entry), t2)
     else
       play(t1, do_put(t2, entry))
@@ -62,9 +64,9 @@ defmodule PSQ do
     {nil, q}
   end
 
-  def pop(q = %PSQ{tree: %Winner{entry: entry, loser: loser, max_key: max_key}}) do
+  def pop(q = %PSQ{tree: {entry, loser, max_key}}) do
     new_winner = second_best(loser, max_key)
-    {entry.value, %PSQ{q | tree: new_winner}}
+    {Entry.value(entry), %PSQ{q | tree: new_winner}}
   end
 
   @spec min(t) :: value | no_return
@@ -72,8 +74,8 @@ defmodule PSQ do
     raise Enum.EmptyError
   end
 
-  def min(%PSQ{tree: %Winner{entry: %Entry{value: value}}}) do
-    value
+  def min(%PSQ{tree: tree}) do
+    tree |> Winner.entry |> Entry.value
   end
 
   @spec get(t, key) :: value
@@ -100,16 +102,16 @@ defmodule PSQ do
   @spec do_fetch(Winner.t, key) :: {:ok, value} | :error
   defp do_fetch(:void, _), do: :error
 
-  defp do_fetch(%Winner{entry: entry, loser: :start}, key) do
-    case entry.key do
-      ^key -> {:ok, entry.value}
+  defp do_fetch({entry, :start, _}, key) do
+    case Entry.key(entry) do
+      ^key -> {:ok, Entry.value(entry)}
       _    -> :error
     end
   end
 
   defp do_fetch(winner, key) do
     {t1, t2} = unplay(winner)
-    if key <= t1.max_key do
+    if key <= Winner.max_key(t1) do
       do_fetch(t1, key)
     else
       do_fetch(t2, key)
@@ -124,8 +126,8 @@ defmodule PSQ do
 
   @spec do_delete(Winner.t, key) :: Winner.t
   defp do_delete(:void, _), do: :void
-  defp do_delete(winner = %Winner{entry: entry, loser: :start}, key) do
-    case entry.key do
+  defp do_delete(winner = {entry, :start, _}, key) do
+    case Entry.key(entry) do
       ^key -> :void
       _    -> winner
     end
@@ -133,7 +135,7 @@ defmodule PSQ do
 
   defp do_delete(winner, key) do
     {t1, t2} = unplay(winner)
-    if key <= t1.max_key do
+    if key <= Winner.max_key(t1) do
       play(do_delete(t1, key), t2)
     else
       play(t1, do_delete(t2, key))
@@ -147,15 +149,12 @@ defmodule PSQ do
 
   @spec do_at_most(Winner.t, priority) :: list(value)
   defp do_at_most(:void, _), do: []
-  defp do_at_most(
-        %Winner{entry: %Entry{priority: priority}},
-        max_priority
-      ) when priority > max_priority do
+  defp do_at_most({{_, _, priority}, _, _}, max_priority) when priority > max_priority do
     []
   end
 
-  defp do_at_most(%Winner{entry: entry, loser: :start}, _) do
-    [entry.value]
+  defp do_at_most({entry, :start, _}, _) do
+    [Entry.value(entry)]
   end
 
   defp do_at_most(winner, max_priority) do
@@ -169,60 +168,44 @@ defmodule PSQ do
   defp play(:void, t), do: t
   defp play(t, :void), do: t
 
-  defp play(
-        %Winner{entry: e1 = %Entry{priority: p1}, loser: l1, max_key: k1},
-        %Winner{entry: e2 = %Entry{priority: p2}, loser: l2, max_key: k2}
-      ) when k1 < k2 do
-    size = Loser.size(l1) + Loser.size(l2) + 1
+  defp play({e1, l1, k1}, {e2, l2, k2}) when k1 < k2 do
+    p1 = Entry.priority(e1)
+    p2 = Entry.priority(e2)
     if p1 <= p2 do
-      loser = balance(%Loser{entry: e2, left: l1, split_key: k1, right: l2, size: size})
-      %Winner{entry: e1, loser: loser, max_key: k2}
+      loser = Loser.new(e2, l1, k1, l2) |> balance
+      Winner.new(e1, loser, k2)
     else
-      loser = balance(%Loser{entry: e1, left: l1, split_key: k1, right: l2, size: size})
-      %Winner{entry: e2, loser: loser, max_key: k2}
+      loser = Loser.new(e1, l1, k1, l2) |> balance
+      Winner.new(e2, loser, k2)
     end
   end
 
   @spec unplay(Winner.t) :: {Winner.t, Winner.t}
-  defp unplay(%Winner{loser: :start}), do: :void
-  defp unplay(
-        %Winner{
-          entry: winner_entry,
-          loser: loser = %Loser{
-            entry: loser_entry,
-            left: left,
-            split_key: split_key,
-            right: right,
-          },
-          max_key: max_key,
-        }
-      ) do
+  defp unplay({winner_entry, loser = {loser_entry, left, split_key, right, _}, max_key}) do
     {left_entry, right_entry} = case Loser.origin(loser) do
       :right -> {winner_entry, loser_entry}
-      :left -> {loser_entry, winner_entry}
+      :left  -> {loser_entry, winner_entry}
     end
 
     {
-      %Winner{entry: left_entry, loser: left, max_key: split_key},
-      %Winner{entry: right_entry, loser: right, max_key: max_key},
+      Winner.new(left_entry, left, split_key),
+      Winner.new(right_entry, right, max_key),
     }
   end
 
   @spec second_best(Loser.t, key) :: Winner.t
   defp second_best(:start, _), do: :void
-  defp second_best(
-        %Loser{entry: entry = %{key: key}, left: left, split_key: split_key, right: right},
-        max_key
-      ) do
+  defp second_best({entry, left, split_key, right, _}, max_key) do
+    key = Entry.key(entry)
     if key <= split_key do
       play(
-        %Winner{entry: entry, loser: left, max_key: split_key},
+        Winner.new(entry, left, split_key),
         second_best(right, max_key)
       )
     else
       play(
         second_best(left, split_key),
-        %Winner{entry: entry, loser: right, max_key: max_key}
+        Winner.new(entry, right, max_key)
       )
     end
   end
@@ -234,7 +217,7 @@ defmodule PSQ do
   @spec balance(Loser.t) :: Loser.t
   defp balance(:start), do: :start
 
-  defp balance(loser = %Loser{left: left, right: right}) do
+  defp balance(loser = {_, left, _, right, _}) do
     l = Loser.size(left)
     r = Loser.size(right)
     cond do
@@ -246,7 +229,10 @@ defmodule PSQ do
   end
 
   @spec balance_left(Loser.t) :: Loser.t
-  defp balance_left(loser = %Loser{right: %Loser{left: rl, right: rr}}) do
+  defp balance_left(loser) do
+    right = Loser.right(loser)
+    rl = Loser.left(right)
+    rr = Loser.right(right)
     if Loser.size(rl) < Loser.size(rr) do
       single_left(loser)
     else
@@ -255,7 +241,10 @@ defmodule PSQ do
   end
 
   @spec balance_right(Loser.t) :: Loser.t
-  defp balance_right(loser = %Loser{left: %Loser{left: ll, right: lr}}) do
+  defp balance_right(loser) do
+    left = Loser.left(loser)
+    ll = Loser.left(left)
+    lr = Loser.right(left)
     if Loser.size(lr) < Loser.size(ll) do
       single_right(loser)
     else
@@ -264,63 +253,46 @@ defmodule PSQ do
   end
 
   @spec single_left(Loser.t) :: Loser.t
-  defp single_left(
-        %Loser{
-          entry: e1,
-          left: t1,
-          split_key: k1,
-          right: %Loser{
-            entry: e2, left: t2, split_key: k2, right: t3
-          }
-        }
-      ) do
-    new_left_size = Loser.size(t1) + Loser.size(t2) + 1
-    new_size = new_left_size + Loser.size(t3) + 1
-    if e2.key <= k2 && e1.priority <= e2.priority do
-      new_left = %Loser{entry: e2, left: t1, split_key: k1, right: t2, size: new_left_size}
-      %Loser{entry: e1, left: new_left, split_key: k2, right: t3, size: new_size}
+  defp single_left(loser) do
+    {e1, t1, k1, right, _} = loser
+    {e2, t2, k2, t3, _} = right
+    if Entry.key(e2) <= k2 && Entry.priority(e1) <= Entry.priority(e2) do
+      new_left = Loser.new(e2, t1, k1, t2)
+      Loser.new(e1, new_left, k2, t3)
     else
-      new_left = %Loser{entry: e1, left: t1, split_key: k1, right: t2, size: new_left_size}
-      %Loser{entry: e2, left: new_left, split_key: k2, right: t3, size: new_size}
+      new_left = Loser.new(e1, t1, k1, t2)
+      Loser.new(e2, new_left, k2, t3)
     end
   end
 
   @spec single_right(Loser.t) :: Loser.t
-  defp single_right(
-        %Loser{
-          entry: e1,
-          left: %Loser{
-            entry: e2, left: t1, split_key: k1, right: t2
-          },
-          split_key: k2,
-          right: t3,
-        }
-      ) do
-    new_right_size = Loser.size(t2) + Loser.size(t3) + 1
-    new_size = Loser.size(t1) + new_right_size + 1
-    if e2.key > k1 && e1.priority <= e2.priority do
-      new_right = %Loser{entry: e2, left: t2, split_key: k2, right: t3, size: new_right_size}
-      %Loser{entry: e1, left: t1, split_key: k1, right: new_right, size: new_size}
+  defp single_right(loser) do
+    {e1, left, k2, t3, _} = loser
+    {e2, t1, k1, t2, _} = left
+    if Entry.key(e2) > k1 && Entry.priority(e1) <= Entry.priority(e2) do
+      new_right = Loser.new(e2, t2, k2, t3)
+      Loser.new(e1, t1, k1, new_right)
     else
-      new_right = %Loser{entry: e1, left: t2, split_key: k2, right: t3, size: new_right_size}
-      %Loser{entry: e2, left: t1, split_key: k1, right: new_right, size: new_size}
+      new_right = Loser.new(e1, t2, k2, t3)
+      Loser.new(e2, t1, k1, new_right)
     end
   end
 
   @spec double_left(Loser.t) :: Loser.t
-  defp double_left(loser = %Loser{right: right}) do
-    single_left(%Loser{loser | right: single_right(right)})
+  defp double_left({entry, left, split_key, right, _}) do
+    single_left(Loser.new(entry, left, split_key, single_right(right)))
   end
 
   @spec double_right(Loser.t) :: Loser.t
-  defp double_right(loser = %Loser{left: left}) do
-    single_right(%Loser{loser | left: single_left(left)})
+  defp double_right({entry, left, split_key, right, _}) do
+    single_right(Loser.new(entry, single_left(left), split_key, right))
   end
 end
 
 defimpl Enumerable, for: PSQ do
   def count(%PSQ{tree: :void}), do: {:ok, 0}
-  def count(%PSQ{tree: %PSQ.Winner{loser: loser}}) do
+  def count(%PSQ{tree: winner}) do
+    loser = PSQ.Winner.loser(winner)
     {:ok, PSQ.Loser.size(loser) + 1}
   end
   def member?(q, element) do
