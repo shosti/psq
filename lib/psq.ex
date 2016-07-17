@@ -24,13 +24,8 @@ defmodule PSQ do
 
   @spec from_list(list(value), prioritizer, key_fun) :: t
   def from_list(list, prioritizer \\ &(&1), key_fun \\ &(&1)) do
-    sorted = list |> Enum.sort_by(key_fun)
-    tree = Enum.reduce sorted, :void, fn(val, t) ->
-      k = key_fun.(val)
-      t2 = %Winner{entry: %Entry{value: val, key: k, priority: prioritizer.(val)}, max_key: k}
-      play(t, t2)
-    end
-    %PSQ{prioritizer: prioritizer, key_fun: key_fun, tree: tree}
+    q = new(prioritizer, key_fun)
+    list |> Enum.into(q)
   end
 
   @spec put(t, value) :: t
