@@ -56,6 +56,11 @@ defmodule PSQTest do
     assert {nil, _} = q |> pop
   end
 
+  test "delete leaves the queue unchanged if the key doesn't exist" do
+    q = from_list([1,2,3,4])
+    assert q == delete(q, 5)
+  end
+
   test "key_fun determines uniqueness and get" do
     elems = [
       %{key: 3, priority: 1},
