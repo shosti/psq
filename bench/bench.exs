@@ -34,7 +34,7 @@ defmodule PSQBench do
     fname = Path.join([System.cwd, "bench", "data", "#{date}.csv"])
     file = File.open! fname, [:write]
 
-    b = Enum.reduce [100_000, 1_000_000], Benchee.init, fn (n, b) ->
+    b = Enum.reduce [100_000, 1_000_000, 10_000_000], Benchee.init, fn (n, b) ->
       IO.puts("Making PSQ of size #{n}...")
       q = PSQBench.q(n)
       IO.puts("Made PSQ!")
