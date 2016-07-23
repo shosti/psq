@@ -320,3 +320,15 @@ defimpl Collectable, for: PSQ do
     end}
   end
 end
+
+defimpl Inspect, for: PSQ do
+  import Inspect.Algebra
+
+  def inspect(q, opts) do
+    case q.tree do
+      :void -> "#PSQ<empty>"
+      _ ->
+        concat ["#PSQ<min:", to_doc(PSQ.min(q), opts), " size:", to_doc(Enum.count(q), opts), ">"]
+    end
+  end
+end
