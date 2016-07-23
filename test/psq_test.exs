@@ -34,8 +34,8 @@ defmodule PSQTest do
     assert to_list(q) == [1, 2, 3, 4, 5]
   end
 
-  test "prioritizer determines the order" do
-    prioritizer = fn x ->
+  test "priority_mapper determines the order" do
+    priority_mapper = fn x ->
       if Integer.is_even x do
         1
       else
@@ -43,7 +43,7 @@ defmodule PSQTest do
       end
     end
 
-    q = [1,2,3,4] |> Enum.into(new(prioritizer))
+    q = [1,2,3,4] |> Enum.into(new(priority_mapper))
 
     {x, q} = q |> pop
     assert Integer.is_odd(x)
@@ -61,7 +61,7 @@ defmodule PSQTest do
     assert q == delete(q, 5)
   end
 
-  test "key_fun determines uniqueness and get" do
+  test "key_mapper determines uniqueness and get" do
     elems = [
       %{key: 3, priority: 1},
       %{key: 4, priority: 2},
@@ -69,9 +69,9 @@ defmodule PSQTest do
       %{key: 3, priority: 4},
     ]
 
-    key_fun = &(&1[:key])
-    prioritizer = &(&1[:priority])
-    q = elems |> Enum.into(new(prioritizer, key_fun))
+    key_mapper = &(&1[:key])
+    priority_mapper = &(&1[:priority])
+    q = elems |> Enum.into(new(priority_mapper, key_mapper))
 
     assert Enum.count(q) == 3
     assert %{key: 4, priority: 2} = q |> get(4)

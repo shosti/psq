@@ -1,5 +1,5 @@
 defmodule PSQ do
-  defstruct tree: :void, key_fun: nil, prioritizer: nil
+  defstruct tree: :void, key_mapper: nil, priority_mapper: nil
 
   alias PSQ.Winner
   alias PSQ.Loser
@@ -8,13 +8,13 @@ defmodule PSQ do
   @type key :: any
   @type value :: any
   @type priority :: any
-  @type key_fun :: (value -> key)
-  @type prioritizer :: (value -> priority)
-  @type t :: %__MODULE__{tree: Winner.t, key_fun: key_fun, prioritizer: prioritizer}
+  @type key_mapper :: (value -> key)
+  @type priority_mapper :: (value -> priority)
+  @type t :: %__MODULE__{tree: Winner.t, key_mapper: key_mapper, priority_mapper: priority_mapper}
 
-  @spec new(prioritizer, key_fun) :: t
-  def new(prioritizer \\ &(&1), key_fun \\ &(&1)) do
-    %PSQ{key_fun: key_fun, prioritizer: prioritizer}
+  @spec new(priority_mapper, key_mapper) :: t
+  def new(priority_mapper \\ &(&1), key_mapper \\ &(&1)) do
+    %PSQ{key_mapper: key_mapper, priority_mapper: priority_mapper}
   end
 
   @spec to_list(t) :: list(value)
@@ -22,15 +22,15 @@ defmodule PSQ do
     Enum.into q, []
   end
 
-  @spec from_list(list(value), prioritizer, key_fun) :: t
-  def from_list(list, prioritizer \\ &(&1), key_fun \\ &(&1)) do
-    q = new(prioritizer, key_fun)
+  @spec from_list(list(value), priority_mapper, key_mapper) :: t
+  def from_list(list, priority_mapper \\ &(&1), key_mapper \\ &(&1)) do
+    q = new(priority_mapper, key_mapper)
     list |> Enum.into(q)
   end
 
   @spec put(t, value) :: t
-  def put(q = %PSQ{tree: tree, prioritizer: prioritizer, key_fun: key_fun}, val) do
-    entry = Entry.new(val, prioritizer, key_fun)
+  def put(q = %PSQ{tree: tree, priority_mapper: priority_mapper, key_mapper: key_mapper}, val) do
+    entry = Entry.new(val, priority_mapper, key_mapper)
     %PSQ{q | tree: do_put(tree, entry)}
   end
 
