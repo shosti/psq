@@ -19,4 +19,5 @@ before_script:
   - mix dialyzer.plt
 script:
   - mix dialyzer --halt-exit-status
+  - mix credo
   - mix coveralls.travis

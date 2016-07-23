@@ -80,7 +80,9 @@ defmodule PSQ do
   @type priority :: any
   @type key_mapper :: (value -> key)
   @type priority_mapper :: (value -> priority)
-  @type t :: %__MODULE__{tree: Winner.t, key_mapper: key_mapper, priority_mapper: priority_mapper}
+  @type t :: %__MODULE__{tree: Winner.t,
+                         key_mapper: key_mapper,
+                         priority_mapper: priority_mapper}
 
   @doc """
   Returns a new empty PSQ.
@@ -401,10 +403,10 @@ defmodule PSQ do
     p1 = Entry.priority(e1)
     p2 = Entry.priority(e2)
     if p1 <= p2 do
-      loser = Loser.new(e2, l1, k1, l2) |> balance
+      loser = balance(Loser.new(e2, l1, k1, l2))
       Winner.new(e1, loser, k2)
     else
-      loser = Loser.new(e1, l1, k1, l2) |> balance
+      loser = balance(Loser.new(e1, l1, k1, l2))
       Winner.new(e2, loser, k2)
     end
   end
@@ -485,7 +487,7 @@ defmodule PSQ do
   defp single_left(loser) do
     {e1, t1, k1, right, _} = loser
     {e2, t2, k2, t3, _} = right
-    if Entry.key(e2) <= k2 && Entry.priority(e1) <= Entry.priority(e2) do
+    if Loser.origin(right) == :left && Entry.priority(e1) <= Entry.priority(e2) do
       new_left = Loser.new(e2, t1, k1, t2)
       Loser.new(e1, new_left, k2, t3)
     else
@@ -498,7 +500,7 @@ defmodule PSQ do
   defp single_right(loser) do
     {e1, left, k2, t3, _} = loser
     {e2, t1, k1, t2, _} = left
-    if Entry.key(e2) > k1 && Entry.priority(e1) <= Entry.priority(e2) do
+    if Loser.origin(left) == :right && Entry.priority(e1) <= Entry.priority(e2) do
       new_right = Loser.new(e2, t2, k2, t3)
       Loser.new(e1, t1, k1, new_right)
     else
@@ -557,7 +559,13 @@ defimpl Inspect, for: PSQ do
     case q.tree do
       :void -> "#PSQ<empty>"
       _ ->
-        concat ["#PSQ<min:", to_doc(PSQ.min(q), opts), " size:", to_doc(Enum.count(q), opts), ">"]
+        concat [
+          "#PSQ<min:",
+          to_doc(PSQ.min(q), opts),
+          " size:",
+          to_doc(Enum.count(q), opts),
+          ">",
+        ]
     end
   end
 end

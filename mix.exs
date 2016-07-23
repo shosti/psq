@@ -30,6 +30,7 @@ defmodule PSQ.Mixfile do
       {:benchee_csv, "~> 0.3", only: :dev},
       {:dialyxir, "~> 0.3.5", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev},
+      {:credo, "~> 0.4", only: [:dev, :test]},
     ]
   end
 
