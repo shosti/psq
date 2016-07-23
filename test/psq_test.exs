@@ -160,6 +160,29 @@ defmodule PSQTest do
     end
   end
 
+  property :balanced do
+    for_all xs in list(int) do
+      q = new_q(xs)
+      is_balanced?(q)
+    end
+  end
+
+  defp is_balanced?(q) do
+    case q.tree do
+      :void -> true
+      winner ->
+        loser = winner |> PSQ.Winner.loser
+        case loser do
+          :start -> true
+          _ ->
+            left = loser |> PSQ.Loser.left |> PSQ.Loser.size
+            right = loser |> PSQ.Loser.right |> PSQ.Loser.size
+
+            (left + right <= 2) || (left <= 4 * right && right <= 4 * left)
+        end
+    end
+  end
+
   defp new_q(xs) do
     xs |> Enum.into(new(&(-&1)))
   end

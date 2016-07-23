@@ -223,7 +223,7 @@ defmodule PSQ do
     cond do
       l + r < 2                 -> loser
       r > (@balance_factor * l) -> balance_left(loser)
-      l > (@balance_factor * l) -> balance_right(loser)
+      l > (@balance_factor * r) -> balance_right(loser)
       true                      -> loser
     end
   end
