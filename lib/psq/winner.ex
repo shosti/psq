@@ -1,4 +1,5 @@
 defmodule PSQ.Winner do
+  @moduledoc false
   @type t :: {PSQ.Entry.t, PSQ.Loser.t, PSQ.key} | :void
 
   @spec new(PSQ.Entry.t, PSQ.Loser.t, PSQ.key) :: t

@@ -1,4 +1,5 @@
 defmodule PSQ.Loser do
+  @moduledoc false
   @type t :: {PSQ.Entry.t, t, PSQ.key, t, non_neg_integer} | :start
 
   @spec new(PSQ.Entry.t, t, PSQ.key, t) :: t

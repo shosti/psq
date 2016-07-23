@@ -1,9 +1,10 @@
 defmodule PSQ.Entry do
+  @moduledoc false
   @type t :: {PSQ.key, PSQ.value, PSQ.priority}
 
-  @spec new(PSQ.value, PSQ.priority_mapper, PSQ.key_mapper) :: t
-  def new(value, priority_mapper, key_mapper) do
-    {key_mapper.(value), value, priority_mapper.(value)}
+  @spec new(PSQ.value, PSQ.priority, PSQ.key) :: t
+  def new(val, priority, key) do
+    {key, val, priority}
   end
 
   @spec key(t) :: PSQ.key
