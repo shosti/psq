@@ -8,7 +8,7 @@ Add psq to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:psq, "~> 0.0.1"}]
+  [{:psq, "~> 0.1.0"}]
 end
 ```
 
