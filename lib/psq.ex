@@ -29,45 +29,45 @@ defmodule PSQ do
   queue. The simplest is to start with an empty queue and input values with
   priorities and keys directly, through `put/4`:
 
-    iex> q = PSQ.new |> PSQ.put(:a, "foo", 2) |> PSQ.put(:b, "bar", 1)
-    iex> q |> PSQ.get(:a)
-    "foo"
-    iex> q |> PSQ.min
-    "bar"
+      iex> q = PSQ.new |> PSQ.put(:a, "foo", 2) |> PSQ.put(:b, "bar", 1)
+      iex> q |> PSQ.get(:a)
+      "foo"
+      iex> q |> PSQ.min
+      "bar"
 
   Alternatively, you can specify mapper functions to determine key and priority
   for all entries in the queue. This is particularly useful for determining
   custom priorities. For example, here's a simple method to use PSQs for
   max-queues:
 
-    iex> q = PSQ.new(&(-&1))
-    iex> q = [?a, ?b, ?c, ?d, ?e] |> Enum.into(q)
-    iex> q |> Enum.to_list
-    [?e, ?d, ?c, ?b, ?a]
+      iex> q = PSQ.new(&(-&1))
+      iex> q = [?a, ?b, ?c, ?d, ?e] |> Enum.into(q)
+      iex> q |> Enum.to_list
+      [?e, ?d, ?c, ?b, ?a]
 
   Here's a queue that orders strings by size, using downcased strings as keys:
 
-    iex> q = PSQ.new(&String.length/1, &String.downcase/1)
-    iex> q = ["How", "is", "your", "ocelot"] |> Enum.into(q)
-    iex> q |> Enum.to_list
-    ["is", "How", "your", "ocelot"]
-    iex> q |> PSQ.get("how")
-    "How"
-    iex> q |> PSQ.get("How")
-    nil
+      iex> q = PSQ.new(&String.length/1, &String.downcase/1)
+      iex> q = ["How", "is", "your", "ocelot"] |> Enum.into(q)
+      iex> q |> Enum.to_list
+      ["is", "How", "your", "ocelot"]
+      iex> q |> PSQ.get("how")
+      "How"
+      iex> q |> PSQ.get("How")
+      nil
 
   Priority and key mappers are also useful if you're inputting entries that are
   structs or maps and want to use particular fields as keys or priorities. For
   example:
 
-    iex> q = PSQ.new(&(&1[:priority]), &(&1[:key]))
-    iex> q = PSQ.put(q, %{priority: 5, key: 1})
-    iex> q = PSQ.put(q, %{priority: 2, key: 2})
-    iex> q = PSQ.put(q, %{priority: 1, key: 1})
-    iex> q |> PSQ.min
-    %{priority: 1, key: 1}
-    iex> q |> PSQ.get(1)
-    %{priority: 1, key: 1}
+      iex> q = PSQ.new(&(&1[:priority]), &(&1[:key]))
+      iex> q = PSQ.put(q, %{priority: 5, key: 1})
+      iex> q = PSQ.put(q, %{priority: 2, key: 2})
+      iex> q = PSQ.put(q, %{priority: 1, key: 1})
+      iex> q |> PSQ.min
+      %{priority: 1, key: 1}
+      iex> q |> PSQ.get(1)
+      %{priority: 1, key: 1}
   """
   defstruct tree: :void, key_mapper: nil, priority_mapper: nil
 
@@ -89,17 +89,17 @@ defmodule PSQ do
   keys and priorities from values. For example, to create a max-queue of numbers
   instead of a min-queue, pass in `&(-&1)` for `priority_mapper`:
 
-    iex> PSQ.new(&(-&1)) |> PSQ.put(3) |> PSQ.put(5) |> PSQ.put(1) |> Enum.to_list
-    [5, 3, 1]
+      iex> PSQ.new(&(-&1)) |> PSQ.put(3) |> PSQ.put(5) |> PSQ.put(1) |> Enum.to_list
+      [5, 3, 1]
 
   `key_mapper` is useful if your values are structs where particular fields are
   considered a unique key:
 
-    iex> q = PSQ.new(&(&1[:priority]), &(&1[:key]))
-    iex> q = q |> PSQ.put(%{key: 1, priority: 1})
-    iex> q = q |> PSQ.put(%{key: 1, priority: 3})
-    iex> q |> PSQ.get(1)
-    %{key: 1, priority: 3}
+      iex> q = PSQ.new(&(&1[:priority]), &(&1[:key]))
+      iex> q = q |> PSQ.put(%{key: 1, priority: 1})
+      iex> q = q |> PSQ.put(%{key: 1, priority: 3})
+      iex> q |> PSQ.get(1)
+      %{key: 1, priority: 3}
 
   `priority_mapper` and `key_mapper` both default to the identity function.
   """
@@ -115,8 +115,8 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> [2, 5, 4, 1, 3] |> PSQ.from_list |> Enum.to_list
-    [1, 2, 3, 4, 5]
+      iex> [2, 5, 4, 1, 3] |> PSQ.from_list |> Enum.to_list
+      [1, 2, 3, 4, 5]
   """
   @spec from_list(list(value), priority_mapper, key_mapper) :: t
   def from_list(list, priority_mapper \\ &(&1), key_mapper \\ &(&1)) do
@@ -133,14 +133,15 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> q = PSQ.new(&(&1), &trunc/1)
-    iex> q = PSQ.put(q, 3.89)
-    iex> q = PSQ.put(q, 2.71)
-    iex> q = PSQ.put(q, 3.14)
-    iex> Enum.to_list(q)
-    [2.71, 3.14]
+      iex> q = PSQ.new(&(&1), &trunc/1)
+      iex> q = PSQ.put(q, 3.89)
+      iex> q = PSQ.put(q, 2.71)
+      iex> q = PSQ.put(q, 3.14)
+      iex> Enum.to_list(q)
+      [2.71, 3.14]
   """
   @spec put(t, value) :: t
+  def put(q, value)
   def put(q = %PSQ{priority_mapper: priority_mapper, key_mapper: key_mapper}, val) do
     put(q, key_mapper.(val), val, priority_mapper.(val))
   end
@@ -156,13 +157,14 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.new |> PSQ.put(:a, 1, 1) |> PSQ.put(:a, 2, 1) |> PSQ.get(:a)
-    2
+      iex> PSQ.new |> PSQ.put(:a, 1, 1) |> PSQ.put(:a, 2, 1) |> PSQ.get(:a)
+      2
 
-    iex> PSQ.new |> PSQ.put(:a, 1, 2) |> PSQ.put(:b, 2, 1) |> Enum.to_list
-    [2, 1]
+      iex> PSQ.new |> PSQ.put(:a, 1, 2) |> PSQ.put(:b, 2, 1) |> Enum.to_list
+      [2, 1]
   """
   @spec put(t, key, value, priority) :: t
+  def put(q, key, val, priority)
   def put(q = %PSQ{tree: tree}, key, val, priority) do
     entry = Entry.new(val, priority, key)
     %PSQ{q | tree: do_put(tree, entry)}
@@ -199,20 +201,21 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> q = PSQ.from_list([3, 1])
-    iex> {min, q} = PSQ.pop(q)
-    iex> min
-    1
-    iex> {min, q} = PSQ.pop(q)
-    iex> min
-    3
-    iex> {min, q} = PSQ.pop(q)
-    iex> min
-    nil
-    iex> Enum.empty?(q)
-    true
+      iex> q = PSQ.from_list([3, 1])
+      iex> {min, q} = PSQ.pop(q)
+      iex> min
+      1
+      iex> {min, q} = PSQ.pop(q)
+      iex> min
+      3
+      iex> {min, q} = PSQ.pop(q)
+      iex> min
+      nil
+      iex> Enum.empty?(q)
+      true
   """
   @spec pop(t) :: {value, t}
+  def pop(q)
   def pop(q = %PSQ{tree: :void}) do
     {nil, q}
   end
@@ -229,14 +232,15 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.from_list([-2, 3, -5]) |> PSQ.min
-    -5
-    iex> PSQ.from_list([-2, 3, -5], &(-&1)) |> PSQ.min
-    3
-    iex> PSQ.new |> PSQ.min
-    ** (Enum.EmptyError) empty error
+      iex> PSQ.from_list([-2, 3, -5]) |> PSQ.min
+      -5
+      iex> PSQ.from_list([-2, 3, -5], &(-&1)) |> PSQ.min
+      3
+      iex> PSQ.new |> PSQ.min
+      ** (Enum.EmptyError) empty error
   """
   @spec min(t) :: value | no_return
+  def min(q)
   def min(%PSQ{tree: :void}) do
     raise Enum.EmptyError
   end
@@ -251,10 +255,10 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.get(:a)
-    3
-    iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.get(:b)
-    nil
+      iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.get(:a)
+      3
+      iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.get(:b)
+      nil
   """
   @spec get(t, key) :: value
   def get(q, key) do
@@ -270,12 +274,13 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch(:a)
-    {:ok, 3}
-    iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch(:b)
-    :error
+      iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch(:a)
+      {:ok, 3}
+      iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch(:b)
+      :error
   """
   @spec fetch(t, key) :: {:ok, value} | :error
+  def fetch(q, key)
   def fetch(%PSQ{tree: tree}, key) do
     do_fetch(tree, key)
   end
@@ -287,10 +292,10 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch!(:a)
-    3
-    iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch!(:b)
-    ** (KeyError) key :b not found in: #PSQ<min:3 size:1>
+      iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch!(:a)
+      3
+      iex> PSQ.new |> PSQ.put(:a, 3, 1) |> PSQ.fetch!(:b)
+      ** (KeyError) key :b not found in: #PSQ<min:3 size:1>
   """
   @spec fetch!(t, key) :: value | no_return
   def fetch!(q, key) do
@@ -326,12 +331,13 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.from_list([3,1,2]) |> PSQ.delete(2) |> Enum.to_list
-    [1, 3]
-    iex> PSQ.from_list([3,1,2]) |> PSQ.delete(4) |> Enum.to_list
-    [1, 2, 3]
+      iex> PSQ.from_list([3,1,2]) |> PSQ.delete(2) |> Enum.to_list
+      [1, 3]
+      iex> PSQ.from_list([3,1,2]) |> PSQ.delete(4) |> Enum.to_list
+      [1, 2, 3]
   """
   @spec delete(t, key) :: t
+  def delete(q, key)
   def delete(q = %PSQ{tree: tree}, key) do
     new_tree = do_delete(tree, key)
     %PSQ{q | tree: new_tree}
@@ -361,10 +367,11 @@ defmodule PSQ do
 
   ## Examples
 
-    iex> PSQ.from_list([1, 3, 2, 5, 4]) |> PSQ.at_most(3)
-    [1, 2, 3]
+      iex> PSQ.from_list([1, 3, 2, 5, 4]) |> PSQ.at_most(3)
+      [1, 2, 3]
   """
   @spec at_most(t, priority) :: list(value)
+  def at_most(q, priority)
   def at_most(%PSQ{tree: tree}, priority) do
     do_at_most(tree, priority)
   end

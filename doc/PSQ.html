@@ -1,0 +1,732 @@
+    <!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.13.0">
+    <title>PSQ – psq v0.1.0</title>
+    <link rel="stylesheet" href="dist/app-9c1e3d5aa2.css" />
+    
+      <link rel="canonical" href="https://hexdocs.pm/psq/PSQ.html" />
+    
+    <script src="dist/sidebar_items.js"></script>
+  </head>
+  <body data-type="modules">
+    <script>if(localStorage.getItem('night-mode')) document.body.className += ' night-mode';</script>
+
+    <div class="main">
+<button class="sidebar-toggle">
+  <i class="icon-menu"></i>
+</button>
+<section class="sidebar">
+
+  
+  <a href="api-reference.html" class="sidebar-projectLink">
+    <div class="sidebar-projectDetails">
+      <h1 class="sidebar-projectName">
+        psq
+      </h1>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+    
+  </a>
+
+  <div class="sidebar-search">
+    <i class="icon-search"></i>
+    <input type="text" class="sidebar-searchInput" placeholder="search" autocomplete="off" />
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+    
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+    
+
+    
+
+    
+  </ul>
+
+  <ul id="full-list" class="sidebar-fullList"></ul>
+  <div class="sidebar-noResults"></div>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+
+      <h1>
+        <small class="visible-xs">psq v0.1.0</small>
+        PSQ
+        
+        
+      </h1>
+
+      
+        <section id="moduledoc" class="docstring">
+          <p>PSQ provides a purely-functional implementation of priority search queues. A
+priority search queue is a data structure that efficiently supports both
+associative operations (like those for <code class="inline">Map</code>) and priority-queue operations
+(akin to heaps in imperative languages). The implementation is based on the
+Haskell
+<a href="https://hackage.haskell.org/package/PSQueue-1.1/docs/Data-PSQueue.html">PSQueue</a>
+package and the associated paper.</p>
+<p>PSQs can be created from lists in O(n log n) time. Once created, the minimum
+element (<code class="inline">min</code>) and size (<code class="inline">Enum.count</code>) can be accessed in O(1) time; most
+other basic operations (including <code class="inline">get</code>, <code class="inline">pop</code>, and <code class="inline">push</code>, and <code class="inline">delete</code>) are
+in O(log n).</p>
+<p>PSQs implement <code class="inline">Enumerable</code> and <code class="inline">Collectable</code>, so all your favorite functions
+from <code class="inline">Enum</code> and <code class="inline">Stream</code> should work as expected.</p>
+<p>Each entry in a PSQ has an associated <em>priority</em> and <em>key</em>. Map-like
+operations, such as <code class="inline">get</code>, use keys to find the entry; all entries in a PSQ
+are unique by key. Ordered operations, such as <code class="inline">pop</code> and <code class="inline">Enum.to_list</code>, use
+priority to determine order (with minimum first). Priorities need not be
+unique by entry; entries with the same priority will be popped in unspecified
+order.</p>
+<h2 id="module-examples" class="section-heading">
+  <a href="#module-examples" class="hover-link"><i class="icon-link"></i></a>
+  Examples
+</h2>
+
+<p>There are two primary ways to determine a value’s priority and key in a
+queue. The simplest is to start with an empty queue and input values with
+priorities and keys directly, through <a href="#put/4"><code class="inline">put/4</code></a>:</p>
+<pre><code class="iex elixir">iex&gt; q = PSQ.new |&gt; PSQ.put(:a, &quot;foo&quot;, 2) |&gt; PSQ.put(:b, &quot;bar&quot;, 1)
+iex&gt; q |&gt; PSQ.get(:a)
+&quot;foo&quot;
+iex&gt; q |&gt; PSQ.min
+&quot;bar&quot;</code></pre>
+<p>Alternatively, you can specify mapper functions to determine key and priority
+for all entries in the queue. This is particularly useful for determining
+custom priorities. For example, here’s a simple method to use PSQs for
+max-queues:</p>
+<pre><code class="iex elixir">iex&gt; q = PSQ.new(&amp;(-&amp;1))
+iex&gt; q = [?a, ?b, ?c, ?d, ?e] |&gt; Enum.into(q)
+iex&gt; q |&gt; Enum.to_list
+[?e, ?d, ?c, ?b, ?a]</code></pre>
+<p>Here’s a queue that orders strings by size, using downcased strings as keys:</p>
+<pre><code class="iex elixir">iex&gt; q = PSQ.new(&amp;String.length/1, &amp;String.downcase/1)
+iex&gt; q = [&quot;How&quot;, &quot;is&quot;, &quot;your&quot;, &quot;ocelot&quot;] |&gt; Enum.into(q)
+iex&gt; q |&gt; Enum.to_list
+[&quot;is&quot;, &quot;How&quot;, &quot;your&quot;, &quot;ocelot&quot;]
+iex&gt; q |&gt; PSQ.get(&quot;how&quot;)
+&quot;How&quot;
+iex&gt; q |&gt; PSQ.get(&quot;How&quot;)
+nil</code></pre>
+<p>Priority and key mappers are also useful if you’re inputting entries that are
+structs or maps and want to use particular fields as keys or priorities. For
+example:</p>
+<pre><code class="iex elixir">iex&gt; q = PSQ.new(&amp;(&amp;1[:priority]), &amp;(&amp;1[:key]))
+iex&gt; q = PSQ.put(q, %{priority: 5, key: 1})
+iex&gt; q = PSQ.put(q, %{priority: 2, key: 2})
+iex&gt; q = PSQ.put(q, %{priority: 1, key: 1})
+iex&gt; q |&gt; PSQ.min
+%{priority: 1, key: 1}
+iex&gt; q |&gt; PSQ.get(1)
+%{priority: 1, key: 1}</code></pre>
+
+        </section>
+      
+
+      
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <i class="icon-link"></i>
+            </a>
+            Summary
+          </h1>
+          
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+    <div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:key/0">key()</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:key_mapper/0">key_mapper()</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:priority/0">priority()</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:priority_mapper/0">priority_mapper()</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:t/0">t()</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:value/0">value()</a>
+  </div>
+  
+</div>
+
+  </div>
+
+
+          
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+    <div class="summary-row">
+  <div class="summary-signature">
+    <a href="#at_most/2">at_most(q, priority)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Returns a list of all values from <code class="inline">q</code> where the value’s priority is less than
+or equal to <code class="inline">priority</code></p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete/2">delete(q, key)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Deletes the value associated with <code class="inline">key</code> from <code class="inline">q</code></p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#fetch/2">fetch(q, key)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Fetches the value for specified <code class="inline">key</code> and returns in a tuple. Returns
+<code class="inline">:error</code> if the key does not exist</p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#fetch!/2">fetch!(q, key)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Fetches the value for specified <code class="inline">key</code></p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#from_list/3">from_list(list, priority_mapper \\ &amp;(&amp;1), key_mapper \\ &amp;(&amp;1))</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Returns a new PSQ from <code class="inline">list</code></p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get/2">get(q, key)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Gets the value for specified <code class="inline">key</code>. If the key does not exist, returns <code class="inline">nil</code></p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#min/1">min(q)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Returns the value with the minimum priority from <code class="inline">q</code></p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#new/2">new(priority_mapper \\ &amp;(&amp;1), key_mapper \\ &amp;(&amp;1))</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Returns a new empty PSQ</p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pop/1">pop(q)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Returns and removes the value with the minimum priority from <code class="inline">q</code>. The value
+will be <code class="inline">nil</code> if the queue is empty</p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#put/2">put(q, value)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Puts the given <code class="inline">value</code> into the queue, using <code class="inline">priority_mapper</code> and
+<code class="inline">key_mapper</code> to determine uniqueness/order (see <code class="inline">new</code>)</p>
+</div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#put/4">put(q, key, val, priority)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Puts the given <code class="inline">value</code> into the queue with specified <code class="inline">key</code> and
+<code class="inline">priority</code></p>
+</div>
+  
+</div>
+
+  </div>
+
+
+          
+
+          
+
+        </section>
+      
+
+      
+        <section id="types" class="types details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <i class="icon-link"></i>
+            </a>
+            Types
+          </h1>
+          <div class="types-list">
+            <div id="t:key/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:key/0">key</a> :: any</code></pre>
+  
+</div>
+<div id="t:key_mapper/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:key_mapper/0">key_mapper</a> :: (<a href="#t:value/0">value</a> -> <a href="#t:key/0">key</a>)</code></pre>
+  
+</div>
+<div id="t:priority/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:priority/0">priority</a> :: any</code></pre>
+  
+</div>
+<div id="t:priority_mapper/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:priority_mapper/0">priority_mapper</a> :: (<a href="#t:value/0">value</a> -> <a href="#t:priority/0">priority</a>)</code></pre>
+  
+</div>
+<div id="t:t/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:t/0">t</a> :: %PSQ{key_mapper: <a href="#t:key_mapper/0">key_mapper</a>, priority_mapper: <a href="#t:priority_mapper/0">priority_mapper</a>, tree: PSQ.Winner.t}</code></pre>
+  
+</div>
+<div id="t:value/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:value/0">value</a> :: any</code></pre>
+  
+</div>
+
+          </div>
+        </section>
+      
+
+      
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <i class="icon-link"></i>
+            </a>
+            Functions
+          </h1>
+          <div class="detail" id="at_most/2">
+  <div class="detail-header">
+    <a href="#at_most/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">at_most(q, priority)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">at_most(<a href="#t:t/0">t</a>, <a href="#t:priority/0">priority</a>) :: [<a href="#t:value/0">value</a>]</code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Returns a list of all values from <code class="inline">q</code> where the value’s priority is less than
+or equal to <code class="inline">priority</code>.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.from_list([1, 3, 2, 5, 4]) |&gt; PSQ.at_most(3)
+[1, 2, 3]</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="delete/2">
+  <div class="detail-header">
+    <a href="#delete/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">delete(q, key)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">delete(<a href="#t:t/0">t</a>, <a href="#t:key/0">key</a>) :: <a href="#t:t/0">t</a></code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Deletes the value associated with <code class="inline">key</code> from <code class="inline">q</code>.</p>
+<p>If <code class="inline">key</code> does not exist, returns <code class="inline">q</code> unchanged.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.from_list([3,1,2]) |&gt; PSQ.delete(2) |&gt; Enum.to_list
+[1, 3]
+iex&gt; PSQ.from_list([3,1,2]) |&gt; PSQ.delete(4) |&gt; Enum.to_list
+[1, 2, 3]</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="fetch/2">
+  <div class="detail-header">
+    <a href="#fetch/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">fetch(q, key)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">fetch(<a href="#t:t/0">t</a>, <a href="#t:key/0">key</a>) :: {:ok, <a href="#t:value/0">value</a>} | :error</code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Fetches the value for specified <code class="inline">key</code> and returns in a tuple. Returns
+<code class="inline">:error</code> if the key does not exist.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.fetch(:a)
+{:ok, 3}
+iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.fetch(:b)
+:error</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="fetch!/2">
+  <div class="detail-header">
+    <a href="#fetch!/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">fetch!(q, key)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">fetch!(<a href="#t:t/0">t</a>, <a href="#t:key/0">key</a>) :: <a href="#t:value/0">value</a> | no_return</code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Fetches the value for specified <code class="inline">key</code>.</p>
+<p>If <code class="inline">key</code> does not exist, a <code class="inline">KeyError</code> is raised.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.fetch!(:a)
+3
+iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.fetch!(:b)
+** (KeyError) key :b not found in: #PSQ&lt;min:3 size:1&gt;</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="from_list/3">
+  <div class="detail-header">
+    <a href="#from_list/3" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">from_list(list, priority_mapper \\ &amp;(&amp;1), key_mapper \\ &amp;(&amp;1))</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">from_list([<a href="#t:value/0">value</a>], <a href="#t:priority_mapper/0">priority_mapper</a>, <a href="#t:key_mapper/0">key_mapper</a>) :: <a href="#t:t/0">t</a></code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Returns a new PSQ from <code class="inline">list</code>.</p>
+<p><code class="inline">priority_mapper</code> and <code class="inline">key_mapper</code> behave the same way as for <code class="inline">new</code>.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; [2, 5, 4, 1, 3] |&gt; PSQ.from_list |&gt; Enum.to_list
+[1, 2, 3, 4, 5]</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="get/2">
+  <div class="detail-header">
+    <a href="#get/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">get(q, key)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">get(<a href="#t:t/0">t</a>, <a href="#t:key/0">key</a>) :: <a href="#t:value/0">value</a></code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Gets the value for specified <code class="inline">key</code>. If the key does not exist, returns <code class="inline">nil</code>.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.get(:a)
+3
+iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.get(:b)
+nil</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="min/1">
+  <div class="detail-header">
+    <a href="#min/1" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">min(q)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">min(<a href="#t:t/0">t</a>) :: <a href="#t:value/0">value</a> | no_return</code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Returns the value with the minimum priority from <code class="inline">q</code>.</p>
+<p>Raises <code class="inline">Enum.EmptyError</code> if the queue is empty.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.from_list([-2, 3, -5]) |&gt; PSQ.min
+-5
+iex&gt; PSQ.from_list([-2, 3, -5], &amp;(-&amp;1)) |&gt; PSQ.min
+3
+iex&gt; PSQ.new |&gt; PSQ.min
+** (Enum.EmptyError) empty error</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="new/2">
+  <div class="detail-header">
+    <a href="#new/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">new(priority_mapper \\ &amp;(&amp;1), key_mapper \\ &amp;(&amp;1))</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">new(<a href="#t:priority_mapper/0">priority_mapper</a>, <a href="#t:key_mapper/0">key_mapper</a>) :: <a href="#t:t/0">t</a></code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Returns a new empty PSQ.</p>
+<p>Optional params <code class="inline">priority_mapper</code> and <code class="inline">key_mapper</code> are functions to determine
+keys and priorities from values. For example, to create a max-queue of numbers
+instead of a min-queue, pass in <code class="inline">&amp;(-&amp;1)</code> for <code class="inline">priority_mapper</code>:</p>
+<pre><code class="iex elixir">iex&gt; PSQ.new(&amp;(-&amp;1)) |&gt; PSQ.put(3) |&gt; PSQ.put(5) |&gt; PSQ.put(1) |&gt; Enum.to_list
+[5, 3, 1]</code></pre>
+<p><code class="inline">key_mapper</code> is useful if your values are structs where particular fields are
+considered a unique key:</p>
+<pre><code class="iex elixir">iex&gt; q = PSQ.new(&amp;(&amp;1[:priority]), &amp;(&amp;1[:key]))
+iex&gt; q = q |&gt; PSQ.put(%{key: 1, priority: 1})
+iex&gt; q = q |&gt; PSQ.put(%{key: 1, priority: 3})
+iex&gt; q |&gt; PSQ.get(1)
+%{key: 1, priority: 3}</code></pre>
+<p><code class="inline">priority_mapper</code> and <code class="inline">key_mapper</code> both default to the identity function.</p>
+
+  </section>
+</div>
+<div class="detail" id="pop/1">
+  <div class="detail-header">
+    <a href="#pop/1" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">pop(q)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">pop(<a href="#t:t/0">t</a>) :: {<a href="#t:value/0">value</a>, <a href="#t:t/0">t</a>}</code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Returns and removes the value with the minimum priority from <code class="inline">q</code>. The value
+will be <code class="inline">nil</code> if the queue is empty.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; q = PSQ.from_list([3, 1])
+iex&gt; {min, q} = PSQ.pop(q)
+iex&gt; min
+1
+iex&gt; {min, q} = PSQ.pop(q)
+iex&gt; min
+3
+iex&gt; {min, q} = PSQ.pop(q)
+iex&gt; min
+nil
+iex&gt; Enum.empty?(q)
+true</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="put/2">
+  <div class="detail-header">
+    <a href="#put/2" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">put(q, value)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">put(<a href="#t:t/0">t</a>, <a href="#t:value/0">value</a>) :: <a href="#t:t/0">t</a></code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Puts the given <code class="inline">value</code> into the queue, using <code class="inline">priority_mapper</code> and
+<code class="inline">key_mapper</code> to determine uniqueness/order (see <code class="inline">new</code>).</p>
+<p>If a value with the same key already exits in the queue, it will be replaced
+by the new value.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; q = PSQ.new(&amp;(&amp;1), &amp;trunc/1)
+iex&gt; q = PSQ.put(q, 3.89)
+iex&gt; q = PSQ.put(q, 2.71)
+iex&gt; q = PSQ.put(q, 3.14)
+iex&gt; Enum.to_list(q)
+[2.71, 3.14]</code></pre>
+
+  </section>
+</div>
+<div class="detail" id="put/4">
+  <div class="detail-header">
+    <a href="#put/4" class="detail-link" title="Link to this function">
+      <i class="icon-link"></i>
+    </a>
+    <span class="signature">put(q, key, val, priority)</span>
+    
+    
+  </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">put(<a href="#t:t/0">t</a>, <a href="#t:key/0">key</a>, <a href="#t:value/0">value</a>, <a href="#t:priority/0">priority</a>) :: <a href="#t:t/0">t</a></code></pre>
+        
+      </div>
+    </div>
+  
+  <section class="docstring">
+    <p>Puts the given <code class="inline">value</code> into the queue with specified <code class="inline">key</code> and
+<code class="inline">priority</code>.</p>
+<p>When using this function (as opposed to <a href="#put/2)"><code class="inline">put/2</code></a>, the queue’s
+<code class="inline">priority_mapper</code> and <code class="inline">key_mapper</code> will be ignored. It is not recommended to
+use both mappers and direct keys/priorities for the same queue.</p>
+<h2>Examples</h2>
+<pre><code class="iex elixir">iex&gt; PSQ.new |&gt; PSQ.put(:a, 1, 1) |&gt; PSQ.put(:a, 2, 1) |&gt; PSQ.get(:a)
+2
+
+iex&gt; PSQ.new |&gt; PSQ.put(:a, 1, 2) |&gt; PSQ.put(:b, 2, 1) |&gt; Enum.to_list
+[2, 1]</code></pre>
+
+  </section>
+</div>
+
+        </section>
+      
+
+      
+
+      
+          <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" rel="help" target="_blank">ExDoc</a> (v0.13.0),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+            </span>
+        </p>
+        <button class="night-mode-toggle" />
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  <script src="dist/app-21f1a20b9e.js"></script>
+  </body>
+</html>
+
