@@ -77,15 +77,15 @@ Haskell
 <a href="https://hackage.haskell.org/package/PSQueue-1.1/docs/Data-PSQueue.html">PSQueue</a>
 package and the associated paper.</p>
 <p>PSQs can be created from lists in O(n log n) time. Once created, the minimum
-element (<code class="inline">min</code>) and size (<code class="inline">Enum.count</code>) can be accessed in O(1) time; most
-other basic operations (including <code class="inline">get</code>, <code class="inline">pop</code>, and <code class="inline">push</code>, and <code class="inline">delete</code>) are
-in O(log n).</p>
+element (<a href="#min/1)"><code class="inline">min/1</code></a> and size (<code class="inline">Enum.count/1</code>) can be accessed in O(1) time; most
+other basic operations (including <a href="#get/2"><code class="inline">get/2</code></a>, <a href="#pop/1"><code class="inline">pop/1</code></a>, and <a href="#put/2"><code class="inline">put/2</code></a>, and
+<a href="#delete/2)"><code class="inline">delete/2</code></a> are in O(log n).</p>
 <p>PSQs implement <code class="inline">Enumerable</code> and <code class="inline">Collectable</code>, so all your favorite functions
 from <code class="inline">Enum</code> and <code class="inline">Stream</code> should work as expected.</p>
 <p>Each entry in a PSQ has an associated <em>priority</em> and <em>key</em>. Map-like
-operations, such as <code class="inline">get</code>, use keys to find the entry; all entries in a PSQ
-are unique by key. Ordered operations, such as <code class="inline">pop</code> and <code class="inline">Enum.to_list</code>, use
-priority to determine order (with minimum first). Priorities need not be
+operations, such as <a href="#get/2"><code class="inline">get/2</code></a>, use keys to find the entry; all entries in a PSQ
+are unique by key. Ordered operations, such as <a href="#pop/1"><code class="inline">pop/1</code></a> and <code class="inline">Enum.to_list/1</code>,
+use priority to determine order (with minimum first). Priorities need not be
 unique by entry; entries with the same priority will be popped in unspecified
 order.</p>
 <h2 id="module-examples" class="section-heading">
@@ -491,7 +491,7 @@ iex&gt; PSQ.new |&gt; PSQ.put(:a, 3, 1) |&gt; PSQ.fetch!(:b)
   
   <section class="docstring">
     <p>Returns a new PSQ from <code class="inline">list</code>.</p>
-<p><code class="inline">priority_mapper</code> and <code class="inline">key_mapper</code> behave the same way as for <code class="inline">new</code>.</p>
+<p><code class="inline">priority_mapper</code> and <code class="inline">key_mapper</code> behave the same way as for <a href="#new/2"><code class="inline">new/2</code></a>.</p>
 <h2>Examples</h2>
 <pre><code class="iex elixir">iex&gt; [2, 5, 4, 1, 3] |&gt; PSQ.from_list |&gt; Enum.to_list
 [1, 2, 3, 4, 5]</code></pre>

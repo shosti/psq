@@ -9,17 +9,17 @@ defmodule PSQ do
   package and the associated paper.
 
   PSQs can be created from lists in O(n log n) time. Once created, the minimum
-  element (`min`) and size (`Enum.count`) can be accessed in O(1) time; most
-  other basic operations (including `get`, `pop`, and `push`, and `delete`) are
-  in O(log n).
+  element (`min/1`) and size (`Enum.count/1`) can be accessed in O(1) time; most
+  other basic operations (including `get/2`, `pop/1`, and `put/2`, and
+  `delete/2`) are in O(log n).
 
   PSQs implement `Enumerable` and `Collectable`, so all your favorite functions
   from `Enum` and `Stream` should work as expected.
 
   Each entry in a PSQ has an associated *priority* and *key*. Map-like
-  operations, such as `get`, use keys to find the entry; all entries in a PSQ
-  are unique by key. Ordered operations, such as `pop` and `Enum.to_list`, use
-  priority to determine order (with minimum first). Priorities need not be
+  operations, such as `get/2`, use keys to find the entry; all entries in a PSQ
+  are unique by key. Ordered operations, such as `pop/1` and `Enum.to_list/1`,
+  use priority to determine order (with minimum first). Priorities need not be
   unique by entry; entries with the same priority will be popped in unspecified
   order.
 
@@ -111,7 +111,7 @@ defmodule PSQ do
   @doc """
   Returns a new PSQ from `list`.
 
-  `priority_mapper` and `key_mapper` behave the same way as for `new`.
+  `priority_mapper` and `key_mapper` behave the same way as for `new/2`.
 
   ## Examples
 
