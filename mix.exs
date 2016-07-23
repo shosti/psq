@@ -23,11 +23,11 @@ defmodule PSQ.Mixfile do
 
   defp deps do
     [
-      {:excheck, "~> 0.3", only: :test},
+      {:excheck, "~> 0.4", only: :test},
       {:triq, github: "shosti/triq", only: :test},
       {:excoveralls, "~> 0.5", only: :test},
-      {:benchee, "~> 0.2", only: :dev},
-      {:benchee_csv, "~> 0.1", only: :dev},
+      {:benchee, "~> 0.3", only: :dev},
+      {:benchee_csv, "~> 0.3", only: :dev},
       {:dialyxir, "~> 0.3.5", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev},
     ]
