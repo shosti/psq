@@ -6,28 +6,6 @@ defmodule PSQTest do
 
   doctest PSQ
 
-  test "priority_mapper determines the order" do
-    priority_mapper = fn x ->
-      if Integer.is_even x do
-        1
-      else
-        0
-      end
-    end
-
-    q = [1,2,3,4] |> Enum.into(new(priority_mapper))
-
-    {x, q} = q |> pop
-    assert Integer.is_odd(x)
-    {x, q} = q |> pop
-    assert Integer.is_odd(x)
-    {x, q} = q |> pop
-    assert Integer.is_even(x)
-    {x, q} = q |> pop
-    assert Integer.is_even(x)
-    assert {nil, _} = q |> pop
-  end
-
   test "key_mapper determines uniqueness and get" do
     elems = [
       %{key: 3, priority: 1},
@@ -45,6 +23,17 @@ defmodule PSQTest do
     assert %{key: 0, priority: 3} = q |> get(0)
     assert %{key: 3, priority: 4} = q |> get(3)
     assert {%{key: 4, priority: 2}, _} = q |> pop
+  end
+
+  property :priority_mapper do
+    for_all xs in list(int) do
+      q = from_list(xs, &Integer.is_even/1)
+      odds = q |> Enum.take_while(&Integer.is_odd/1)
+      evens = q |> Enum.drop_while(&Integer.is_odd/1)
+      {l_odds, l_evens} = xs |> Enum.uniq |> Enum.partition(&Integer.is_odd/1)
+
+      Enum.sort(odds) == Enum.sort(l_odds) && Enum.sort(evens) == Enum.sort(l_evens)
+    end
   end
 
   property :sort do
