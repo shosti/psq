@@ -189,11 +189,11 @@ defmodule PSQ do
   end
 
   defp do_put(winner, entry) do
-    {t1, t2} = unplay(winner)
-    if Entry.key(entry) <= Winner.max_key(t1) do
-      play(do_put(t1, entry), t2)
+    {tree1, tree2} = unplay(winner)
+    if Entry.key(entry) <= Winner.max_key(tree1) do
+      play(do_put(tree1, entry), tree2)
     else
-      play(t1, do_put(t2, entry))
+      play(tree1, do_put(tree2, entry))
     end
   end
 
@@ -318,11 +318,11 @@ defmodule PSQ do
   end
 
   defp do_fetch(winner, key) do
-    {t1, t2} = unplay(winner)
-    if key <= Winner.max_key(t1) do
-      do_fetch(t1, key)
+    {tree1, tree2} = unplay(winner)
+    if key <= Winner.max_key(tree1) do
+      do_fetch(tree1, key)
     else
-      do_fetch(t2, key)
+      do_fetch(tree2, key)
     end
   end
 
@@ -355,11 +355,11 @@ defmodule PSQ do
   end
 
   defp do_delete(winner, key) do
-    {t1, t2} = unplay(winner)
-    if key <= Winner.max_key(t1) do
-      play(do_delete(t1, key), t2)
+    {tree1, tree2} = unplay(winner)
+    if key <= Winner.max_key(tree1) do
+      play(do_delete(tree1, key), tree2)
     else
-      play(t1, do_delete(t2, key))
+      play(tree1, do_delete(tree2, key))
     end
   end
 
@@ -389,8 +389,8 @@ defmodule PSQ do
   end
 
   defp do_at_most(winner, max_priority) do
-    {t1, t2} = unplay(winner)
-    do_at_most(t1, max_priority) ++ do_at_most(t2, max_priority)
+    {tree1, tree2} = unplay(winner)
+    do_at_most(tree1, max_priority) ++ do_at_most(tree2, max_priority)
   end
 
   # "Tournament" functions
@@ -399,15 +399,15 @@ defmodule PSQ do
   defp play(:void, t), do: t
   defp play(t, :void), do: t
 
-  defp play({e1, l1, k1}, {e2, l2, k2}) when k1 < k2 do
-    p1 = Entry.priority(e1)
-    p2 = Entry.priority(e2)
+  defp play({entry1, loser1, key1}, {entry2, loser2, key2}) when key1 < key2 do
+    p1 = Entry.priority(entry1)
+    p2 = Entry.priority(entry2)
     if p1 <= p2 do
-      loser = balance(Loser.new(e2, l1, k1, l2))
-      Winner.new(e1, loser, k2)
+      loser = balance(Loser.new(entry2, loser1, key1, loser2))
+      Winner.new(entry1, loser, key2)
     else
-      loser = balance(Loser.new(e1, l1, k1, l2))
-      Winner.new(e2, loser, k2)
+      loser = balance(Loser.new(entry1, loser1, key1, loser2))
+      Winner.new(entry2, loser, key2)
     end
   end
 
@@ -485,27 +485,27 @@ defmodule PSQ do
 
   @spec single_left(Loser.t) :: Loser.t
   defp single_left(loser) do
-    {e1, t1, k1, right, _} = loser
-    {e2, t2, k2, t3, _} = right
-    if Loser.origin(right) == :left && Entry.priority(e1) <= Entry.priority(e2) do
-      new_left = Loser.new(e2, t1, k1, t2)
-      Loser.new(e1, new_left, k2, t3)
+    {entry1, tree1, key1, right, _} = loser
+    {entry2, tree2, key2, tree3, _} = right
+    if Loser.origin(right) == :left && Entry.priority(entry1) <= Entry.priority(entry2) do
+      new_left = Loser.new(entry2, tree1, key1, tree2)
+      Loser.new(entry1, new_left, key2, tree3)
     else
-      new_left = Loser.new(e1, t1, k1, t2)
-      Loser.new(e2, new_left, k2, t3)
+      new_left = Loser.new(entry1, tree1, key1, tree2)
+      Loser.new(entry2, new_left, key2, tree3)
     end
   end
 
   @spec single_right(Loser.t) :: Loser.t
   defp single_right(loser) do
-    {e1, left, k2, t3, _} = loser
-    {e2, t1, k1, t2, _} = left
-    if Loser.origin(left) == :right && Entry.priority(e1) <= Entry.priority(e2) do
-      new_right = Loser.new(e2, t2, k2, t3)
-      Loser.new(e1, t1, k1, new_right)
+    {entry1, left, key2, tree3, _} = loser
+    {entry2, tree1, key1, tree2, _} = left
+    if Loser.origin(left) == :right && Entry.priority(entry1) <= Entry.priority(entry2) do
+      new_right = Loser.new(entry2, tree2, key2, tree3)
+      Loser.new(entry1, tree1, key1, new_right)
     else
-      new_right = Loser.new(e1, t2, k2, t3)
-      Loser.new(e2, t1, k1, new_right)
+      new_right = Loser.new(entry1, tree2, key2, tree3)
+      Loser.new(entry2, tree1, key1, new_right)
     end
   end
 
