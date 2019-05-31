@@ -26,18 +26,18 @@ defmodule PSQTest do
   end
 
   property :priority_mapper do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = from_list(xs, &Integer.is_even/1)
       odds = q |> Enum.take_while(&Integer.is_odd/1)
       evens = q |> Enum.drop_while(&Integer.is_odd/1)
-      {l_odds, l_evens} = xs |> Enum.uniq |> Enum.partition(&Integer.is_odd/1)
+      {l_odds, l_evens} = xs |> Enum.uniq |> Enum.split_with(&Integer.is_odd/1)
 
       Enum.sort(odds) == Enum.sort(l_odds) && Enum.sort(evens) == Enum.sort(l_evens)
     end
   end
 
   property :sort do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
       l = Enum.to_list(q)
 
@@ -46,7 +46,7 @@ defmodule PSQTest do
   end
 
   property :count do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
 
       Enum.count(q) == Enum.count(Enum.uniq(xs))
@@ -54,7 +54,7 @@ defmodule PSQTest do
   end
 
   property :minimum do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
       case pop(q) do
         nil -> true
@@ -67,7 +67,7 @@ defmodule PSQTest do
   end
 
   property :membership do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
       Enum.all? xs, fn(x) ->
         Enum.member? q, x
@@ -76,7 +76,7 @@ defmodule PSQTest do
   end
 
   property :deletion do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
       Enum.all? xs, fn(x) ->
         !Enum.member?(delete(q, x), x)
@@ -85,7 +85,7 @@ defmodule PSQTest do
   end
 
   property :at_most do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
       if Enum.empty?(xs) do
         at_most(q, :rand.uniform(1000)) == []
@@ -105,7 +105,7 @@ defmodule PSQTest do
   end
 
   property :balanced do
-    for_all xs in list(int) do
+    for_all xs in list(int()) do
       q = new_q(xs)
       is_balanced?(q)
     end
