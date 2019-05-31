@@ -526,6 +526,7 @@ defimpl Enumerable, for: PSQ do
     loser = PSQ.Winner.loser(winner)
     {:ok, PSQ.Loser.size(loser) + 1}
   end
+
   def member?(q, element) do
     case PSQ.fetch(q, element) do
       {:ok, _} -> {:ok, true}
@@ -539,6 +540,12 @@ defimpl Enumerable, for: PSQ do
   def reduce(q, {:cont, acc}, fun) do
     {x, rest} = PSQ.pop(q)
     reduce(rest, fun.(x, acc), fun)
+  end
+
+  # There's no sensible way to do a quick slice in a PSQ, so fall back to the
+  # default algorithm.
+  def slice(_) do
+    {:error, __MODULE__}
   end
 end
 
