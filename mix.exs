@@ -11,9 +11,12 @@ defmodule PSQ.Mixfile do
       deps: deps(),
       dialyzer: [
         flags: ~w(-Wunmatched_returns -Werror_handling -Wrace_conditions -Wno_match),
-        plt_file: "#{System.user_home!}/.plt/dialyxir_#{:erlang.system_info(:otp_release)}_#{System.version}.plt"
+        plt_file:
+          "#{System.user_home!()}/.plt/dialyxir_#{:erlang.system_info(:otp_release)}_#{
+            System.version()
+          }.plt"
       ],
-      test_coverage: [tool: ExCoveralls],
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -30,7 +33,7 @@ defmodule PSQ.Mixfile do
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:excheck, "~> 0.6", only: :test},
       {:excoveralls, "~> 0.5", only: :test},
-      {:triq, "~> 1.2", only: :test},
+      {:triq, "~> 1.2", only: :test}
     ]
   end
 
@@ -44,7 +47,7 @@ defmodule PSQ.Mixfile do
     [
       maintainers: ["Emanuel Evans <mail@emanuel.industries>"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/shosti/psq"},
+      links: %{"GitHub" => "https://github.com/shosti/psq"}
     ]
   end
 end

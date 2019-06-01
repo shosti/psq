@@ -80,9 +80,11 @@ defmodule PSQ do
   @type priority :: any
   @type key_mapper :: (value -> key)
   @type priority_mapper :: (value -> priority)
-  @type t :: %__MODULE__{tree: Winner.t,
-                         key_mapper: key_mapper,
-                         priority_mapper: priority_mapper}
+  @type t :: %__MODULE__{
+          tree: Winner.t(),
+          key_mapper: key_mapper,
+          priority_mapper: priority_mapper
+        }
 
   @doc """
   Returns a new empty PSQ.
@@ -106,7 +108,7 @@ defmodule PSQ do
   `priority_mapper` and `key_mapper` both default to the identity function.
   """
   @spec new(priority_mapper, key_mapper) :: t
-  def new(priority_mapper \\ &(&1), key_mapper \\ &(&1)) do
+  def new(priority_mapper \\ & &1, key_mapper \\ & &1) do
     %PSQ{key_mapper: key_mapper, priority_mapper: priority_mapper}
   end
 
@@ -121,7 +123,7 @@ defmodule PSQ do
       [1, 2, 3, 4, 5]
   """
   @spec from_list(list(value), priority_mapper, key_mapper) :: t
-  def from_list(list, priority_mapper \\ &(&1), key_mapper \\ &(&1)) do
+  def from_list(list, priority_mapper \\ & &1, key_mapper \\ & &1) do
     q = new(priority_mapper, key_mapper)
     list |> Enum.into(q)
   end
@@ -144,6 +146,7 @@ defmodule PSQ do
   """
   @spec put(t, value) :: t
   def put(q, value)
+
   def put(q = %PSQ{priority_mapper: priority_mapper, key_mapper: key_mapper}, val) do
     put(q, key_mapper.(val), val, priority_mapper.(val))
   end
@@ -167,22 +170,26 @@ defmodule PSQ do
   """
   @spec put(t, key, value, priority) :: t
   def put(q, key, val, priority)
+
   def put(q = %PSQ{tree: tree}, key, val, priority) do
     entry = Entry.new(val, priority, key)
     %PSQ{q | tree: do_put(tree, entry)}
   end
 
-  @spec do_put(Winner.t, Entry.t) :: Winner.t
+  @spec do_put(Winner.t(), Entry.t()) :: Winner.t()
   defp do_put(:void, entry), do: Winner.new(entry, :start, Entry.key(entry))
 
   defp do_put(winner = {winner_entry, :start, max_key}, entry) do
     winner_key = Entry.key(winner_entry)
     entry_key = Entry.key(entry)
+
     cond do
       winner_key < entry_key ->
         play(winner, Winner.new(entry, :start, entry_key))
+
       winner_key == entry_key ->
         Winner.new(entry, :start, max_key)
+
       winner_key > entry_key ->
         play(Winner.new(entry, :start, entry_key), winner)
     end
@@ -190,6 +197,7 @@ defmodule PSQ do
 
   defp do_put(winner, entry) do
     {tree1, tree2} = unplay(winner)
+
     if Entry.key(entry) <= Winner.max_key(tree1) do
       play(do_put(tree1, entry), tree2)
     else
@@ -218,6 +226,7 @@ defmodule PSQ do
   """
   @spec pop(t) :: {value, t}
   def pop(q)
+
   def pop(q = %PSQ{tree: :void}) do
     {nil, q}
   end
@@ -243,12 +252,13 @@ defmodule PSQ do
   """
   @spec min(t) :: value | no_return
   def min(q)
+
   def min(%PSQ{tree: :void}) do
     raise Enum.EmptyError
   end
 
   def min(%PSQ{tree: tree}) do
-    tree |> Winner.entry |> Entry.value
+    tree |> Winner.entry() |> Entry.value()
   end
 
   @doc """
@@ -283,6 +293,7 @@ defmodule PSQ do
   """
   @spec fetch(t, key) :: {:ok, value} | :error
   def fetch(q, key)
+
   def fetch(%PSQ{tree: tree}, key) do
     do_fetch(tree, key)
   end
@@ -307,18 +318,19 @@ defmodule PSQ do
     end
   end
 
-  @spec do_fetch(Winner.t, key) :: {:ok, value} | :error
+  @spec do_fetch(Winner.t(), key) :: {:ok, value} | :error
   defp do_fetch(:void, _), do: :error
 
   defp do_fetch({entry, :start, _}, key) do
     case Entry.key(entry) do
       ^key -> {:ok, Entry.value(entry)}
-      _    -> :error
+      _ -> :error
     end
   end
 
   defp do_fetch(winner, key) do
     {tree1, tree2} = unplay(winner)
+
     if key <= Winner.max_key(tree1) do
       do_fetch(tree1, key)
     else
@@ -340,22 +352,25 @@ defmodule PSQ do
   """
   @spec delete(t, key) :: t
   def delete(q, key)
+
   def delete(q = %PSQ{tree: tree}, key) do
     new_tree = do_delete(tree, key)
     %PSQ{q | tree: new_tree}
   end
 
-  @spec do_delete(Winner.t, key) :: Winner.t
+  @spec do_delete(Winner.t(), key) :: Winner.t()
   defp do_delete(:void, _), do: :void
+
   defp do_delete(winner = {entry, :start, _}, key) do
     case Entry.key(entry) do
       ^key -> :void
-      _    -> winner
+      _ -> winner
     end
   end
 
   defp do_delete(winner, key) do
     {tree1, tree2} = unplay(winner)
+
     if key <= Winner.max_key(tree1) do
       play(do_delete(tree1, key), tree2)
     else
@@ -374,12 +389,14 @@ defmodule PSQ do
   """
   @spec at_most(t, priority) :: list(value)
   def at_most(q, priority)
+
   def at_most(%PSQ{tree: tree}, priority) do
     do_at_most(tree, priority)
   end
 
-  @spec do_at_most(Winner.t, priority) :: list(value)
+  @spec do_at_most(Winner.t(), priority) :: list(value)
   defp do_at_most(:void, _), do: []
+
   defp do_at_most({{_, _, priority}, _, _}, max_priority) when priority > max_priority do
     []
   end
@@ -395,13 +412,14 @@ defmodule PSQ do
 
   # "Tournament" functions
 
-  @spec play(Winner.t, Winner.t) :: Winner.t
+  @spec play(Winner.t(), Winner.t()) :: Winner.t()
   defp play(:void, t), do: t
   defp play(t, :void), do: t
 
   defp play({entry1, loser1, key1}, {entry2, loser2, key2}) when key1 < key2 do
     p1 = Entry.priority(entry1)
     p2 = Entry.priority(entry2)
+
     if p1 <= p2 do
       loser = balance(Loser.new(entry2, loser1, key1, loser2))
       Winner.new(entry1, loser, key2)
@@ -411,23 +429,26 @@ defmodule PSQ do
     end
   end
 
-  @spec unplay(Winner.t) :: {Winner.t, Winner.t}
+  @spec unplay(Winner.t()) :: {Winner.t(), Winner.t()}
   defp unplay({winner_entry, loser = {loser_entry, left, split_key, right, _}, max_key}) do
-    {left_entry, right_entry} = case Loser.origin(loser) do
-      :right -> {winner_entry, loser_entry}
-      :left  -> {loser_entry, winner_entry}
-    end
+    {left_entry, right_entry} =
+      case Loser.origin(loser) do
+        :right -> {winner_entry, loser_entry}
+        :left -> {loser_entry, winner_entry}
+      end
 
     {
       Winner.new(left_entry, left, split_key),
-      Winner.new(right_entry, right, max_key),
+      Winner.new(right_entry, right, max_key)
     }
   end
 
-  @spec second_best(Loser.t, key) :: Winner.t
+  @spec second_best(Loser.t(), key) :: Winner.t()
   defp second_best(:start, _), do: :void
+
   defp second_best({entry, left, split_key, right, _}, max_key) do
     key = Entry.key(entry)
+
     if key <= split_key do
       play(
         Winner.new(entry, left, split_key),
@@ -445,25 +466,27 @@ defmodule PSQ do
 
   @balance_factor 4.0
 
-  @spec balance(Loser.t) :: Loser.t
+  @spec balance(Loser.t()) :: Loser.t()
   defp balance(:start), do: :start
 
   defp balance(loser = {_, left, _, right, _}) do
     l = Loser.size(left)
     r = Loser.size(right)
+
     cond do
-      l + r < 2                 -> loser
-      r > (@balance_factor * l) -> balance_left(loser)
-      l > (@balance_factor * r) -> balance_right(loser)
-      true                      -> loser
+      l + r < 2 -> loser
+      r > @balance_factor * l -> balance_left(loser)
+      l > @balance_factor * r -> balance_right(loser)
+      true -> loser
     end
   end
 
-  @spec balance_left(Loser.t) :: Loser.t
+  @spec balance_left(Loser.t()) :: Loser.t()
   defp balance_left(loser) do
     right = Loser.right(loser)
     rl = Loser.left(right)
     rr = Loser.right(right)
+
     if Loser.size(rl) < Loser.size(rr) do
       single_left(loser)
     else
@@ -471,11 +494,12 @@ defmodule PSQ do
     end
   end
 
-  @spec balance_right(Loser.t) :: Loser.t
+  @spec balance_right(Loser.t()) :: Loser.t()
   defp balance_right(loser) do
     left = Loser.left(loser)
     ll = Loser.left(left)
     lr = Loser.right(left)
+
     if Loser.size(lr) < Loser.size(ll) do
       single_right(loser)
     else
@@ -483,10 +507,11 @@ defmodule PSQ do
     end
   end
 
-  @spec single_left(Loser.t) :: Loser.t
+  @spec single_left(Loser.t()) :: Loser.t()
   defp single_left(loser) do
     {entry1, tree1, key1, right, _} = loser
     {entry2, tree2, key2, tree3, _} = right
+
     if Loser.origin(right) == :left && Entry.priority(entry1) <= Entry.priority(entry2) do
       new_left = Loser.new(entry2, tree1, key1, tree2)
       Loser.new(entry1, new_left, key2, tree3)
@@ -496,10 +521,11 @@ defmodule PSQ do
     end
   end
 
-  @spec single_right(Loser.t) :: Loser.t
+  @spec single_right(Loser.t()) :: Loser.t()
   defp single_right(loser) do
     {entry1, left, key2, tree3, _} = loser
     {entry2, tree1, key1, tree2, _} = left
+
     if Loser.origin(left) == :right && Entry.priority(entry1) <= Entry.priority(entry2) do
       new_right = Loser.new(entry2, tree2, key2, tree3)
       Loser.new(entry1, tree1, key1, new_right)
@@ -509,12 +535,12 @@ defmodule PSQ do
     end
   end
 
-  @spec double_left(Loser.t) :: Loser.t
+  @spec double_left(Loser.t()) :: Loser.t()
   defp double_left({entry, left, split_key, right, _}) do
     single_left(Loser.new(entry, left, split_key, single_right(right)))
   end
 
-  @spec double_right(Loser.t) :: Loser.t
+  @spec double_right(Loser.t()) :: Loser.t()
   defp double_right({entry, left, split_key, right, _}) do
     single_right(Loser.new(entry, single_left(left), split_key, right))
   end
@@ -522,6 +548,7 @@ end
 
 defimpl Enumerable, for: PSQ do
   def count(%PSQ{tree: :void}), do: {:ok, 0}
+
   def count(%PSQ{tree: winner}) do
     loser = PSQ.Winner.loser(winner)
     {:ok, PSQ.Loser.size(loser) + 1}
@@ -537,6 +564,7 @@ defimpl Enumerable, for: PSQ do
   def reduce(_, {:halt, acc}, _fun), do: {:halted, acc}
   def reduce(q, {:suspend, acc}, fun), do: {:suspended, acc, &reduce(q, &1, fun)}
   def reduce(%PSQ{tree: :void}, {:cont, acc}, _fun), do: {:done, acc}
+
   def reduce(q, {:cont, acc}, fun) do
     {x, rest} = PSQ.pop(q)
     reduce(rest, fun.(x, acc), fun)
@@ -551,11 +579,12 @@ end
 
 defimpl Collectable, for: PSQ do
   def into(original) do
-    {original, fn
-      q, {:cont, x} -> PSQ.put(q, x)
-      q, :done -> q
-      _, :halt -> :ok
-    end}
+    {original,
+     fn
+       q, {:cont, x} -> PSQ.put(q, x)
+       q, :done -> q
+       _, :halt -> :ok
+     end}
   end
 end
 
@@ -564,15 +593,17 @@ defimpl Inspect, for: PSQ do
 
   def inspect(q, opts) do
     case q.tree do
-      :void -> "#PSQ<empty>"
+      :void ->
+        "#PSQ<empty>"
+
       _ ->
-        concat [
+        concat([
           "#PSQ<min:",
           to_doc(PSQ.min(q), opts),
           " size:",
           to_doc(Enum.count(q), opts),
-          ">",
-        ]
+          ">"
+        ])
     end
   end
 end

@@ -11,11 +11,11 @@ defmodule PSQTest do
       %{key: 3, priority: 1},
       %{key: 4, priority: 2},
       %{key: 0, priority: 3},
-      %{key: 3, priority: 4},
+      %{key: 3, priority: 4}
     ]
 
-    key_mapper = &(&1[:key])
-    priority_mapper = &(&1[:priority])
+    key_mapper = & &1[:key]
+    priority_mapper = & &1[:priority]
     q = elems |> Enum.into(new(priority_mapper, key_mapper))
 
     assert Enum.count(q) == 3
@@ -30,7 +30,7 @@ defmodule PSQTest do
       q = from_list(xs, &Integer.is_even/1)
       odds = q |> Enum.take_while(&Integer.is_odd/1)
       evens = q |> Enum.drop_while(&Integer.is_odd/1)
-      {l_odds, l_evens} = xs |> Enum.uniq |> Enum.split_with(&Integer.is_odd/1)
+      {l_odds, l_evens} = xs |> Enum.uniq() |> Enum.split_with(&Integer.is_odd/1)
 
       Enum.sort(odds) == Enum.sort(l_odds) && Enum.sort(evens) == Enum.sort(l_evens)
     end
@@ -56,12 +56,15 @@ defmodule PSQTest do
   property :minimum do
     for_all xs in list(int()) do
       q = new_q(xs)
+
       case pop(q) do
-        nil -> true
+        nil ->
+          true
+
         {min, _} ->
-          Enum.all? xs, fn(x) ->
+          Enum.all?(xs, fn x ->
             x <= min
-          end
+          end)
       end
     end
   end
@@ -69,37 +72,40 @@ defmodule PSQTest do
   property :membership do
     for_all xs in list(int()) do
       q = new_q(xs)
-      Enum.all? xs, fn(x) ->
-        Enum.member? q, x
-      end
+
+      Enum.all?(xs, fn x ->
+        Enum.member?(q, x)
+      end)
     end
   end
 
   property :deletion do
     for_all xs in list(int()) do
       q = new_q(xs)
-      Enum.all? xs, fn(x) ->
+
+      Enum.all?(xs, fn x ->
         !Enum.member?(delete(q, x), x)
-      end
+      end)
     end
   end
 
   property :at_most do
     for_all xs in list(int()) do
       q = new_q(xs)
+
       if Enum.empty?(xs) do
         at_most(q, :rand.uniform(1000)) == []
       else
         pivot = Enum.random(xs)
         subset = at_most(q, pivot)
 
-        Enum.all? xs, fn(x) ->
-          if (-x) <= pivot do
+        Enum.all?(xs, fn x ->
+          if -x <= pivot do
             Enum.member?(q, x) && Enum.member?(subset, x)
           else
             Enum.member?(q, x) && !Enum.member?(subset, x)
           end
-        end
+        end)
       end
     end
   end
@@ -113,16 +119,21 @@ defmodule PSQTest do
 
   defp is_balanced?(q) do
     case q.tree do
-      :void -> true
-      winner ->
-        loser = winner |> PSQ.Winner.loser
-        case loser do
-          :start -> true
-          _ ->
-            left = loser |> PSQ.Loser.left |> PSQ.Loser.size
-            right = loser |> PSQ.Loser.right |> PSQ.Loser.size
+      :void ->
+        true
 
-            (left + right <= 2) || (left <= 4 * right && right <= 4 * left)
+      winner ->
+        loser = winner |> PSQ.Winner.loser()
+
+        case loser do
+          :start ->
+            true
+
+          _ ->
+            left = loser |> PSQ.Loser.left() |> PSQ.Loser.size()
+            right = loser |> PSQ.Loser.right() |> PSQ.Loser.size()
+
+            left + right <= 2 || (left <= 4 * right && right <= 4 * left)
         end
     end
   end
