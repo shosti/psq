@@ -1,10 +1,10 @@
 defmodule PSQ.Loser do
   @moduledoc false
-  @type t :: {PSQ.Entry.t, t, PSQ.key, t, non_neg_integer} | :start
+  @type t :: {PSQ.Entry.t(), t, PSQ.key(), t, non_neg_integer} | :start
 
   alias PSQ.Entry
 
-  @spec new(PSQ.Entry.t, t, PSQ.key, t) :: t
+  @spec new(PSQ.Entry.t(), t, PSQ.key(), t) :: t
   def new(entry, left, split_key, right) do
     s = size(left) + size(right) + 1
     {entry, left, split_key, right, s}
@@ -23,6 +23,7 @@ defmodule PSQ.Loser do
   @spec origin(t) :: :left | :right
   def origin({entry, _, split_key, _, _}) do
     key = Entry.key(entry)
+
     if key > split_key do
       :right
     else
